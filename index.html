@@ -6,9 +6,10 @@
     <title>CFT Calculator | OSWW Group</title>
     <meta name="description" content="Calculate CFT (Cubic Feet) for your packaging needs">
     <meta name="theme-color" content="#3498db">
-    <link rel="manifest" href="data:application/json;charset=utf-8;base64,ewogICJuYW1lIjogIkNGVCBDYWxjdWxhdG9yIiwKICAic2hvcnRfbmFtZSI6ICJDRlQgQ2FsYyIsCiAgImRlc2NyaXB0aW9uIjogIkNhbGN1bGF0ZSBDTlQgKEN1YmljIEZlZXQpIGZvciB5b3VyIHBhY2thZ2luZyBuZWVkcyIsCiAgInN0YXJ0X3VybCI6ICIvIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZjhmOWZhIiwKICAidGhlbWVfY29sb3IiOiAiIzM0OThkYiIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogIi9pY29ucy9pY29uLTE5MngxOTIucG5nIiwKICAgICAgInNpemVzIjogIjE5MngxOTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9wbmciCiAgICB9LAogICAgewogICAgICAic3JjIjogIi9pY29ucy9pY29uLTUxMng1MTIucG5nIiwKICAgICAgInNpemVzIjogIjUxMng1MTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9wbmciCiAgICB9LAogICAgewogICAgICAic3JjIjogIi9pY29ucy9pY29uLTUxMng1MTItbWFza2FibGUucG5nIiwKICAgICAgInNpemVzIjogIjUxMng1MTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9wbmciLAogICAgICAicHVycG9zZSI6ICJtYXNrYWJsZSIKICAgIH0KICBdCn0=">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="https://dharunvm2000.github.io/CFT_calc/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="https://dharunvm2000.github.io/CFT_calc/icon-192x192.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
         :root {
             --primary: #2c3e50;
             --secondary: #3498db;
@@ -560,78 +561,43 @@
         const installBtn = document.getElementById('installBtn');
         
         window.addEventListener('beforeinstallprompt', (e) => {
-            // Prevent the mini-infobar from appearing on mobile
             e.preventDefault();
-            // Stash the event so it can be triggered later
             deferredPrompt = e;
-            // Show the install button
             installBtn.style.display = 'flex';
         });
         
         installBtn.addEventListener('click', async () => {
             if (!deferredPrompt) return;
-            // Show the install prompt
             deferredPrompt.prompt();
-            // Wait for the user to respond to the prompt
             const { outcome } = await deferredPrompt.userChoice;
-            // Optionally, send analytics event with outcome of user choice
-            console.log(`User response to the install prompt: ${outcome}`);
-            // We've used the prompt, and can't use it again, throw it away
+            console.log(`User response: ${outcome}`);
             deferredPrompt = null;
-            // Hide the install button
             installBtn.style.display = 'none';
         });
         
         window.addEventListener('appinstalled', () => {
-            // Hide the install button
             installBtn.style.display = 'none';
-            // Clear the deferredPrompt so it can be garbage collected
             deferredPrompt = null;
-            // Optionally, send analytics event to indicate successful install
-            console.log('PWA was installed');
+            console.log('PWA installed');
         });
 
-        // Service Worker Registration
+        // Service Worker Registration with absolute paths
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                // Create a simple service worker inline
-                const swContent = `
-                    const CACHE_NAME = 'cft-calculator-v1';
-                    const ASSETS = [
-                        '/',
-                        '/index.html',
-                        '/manifest.json'
-                    ];
-
-                    self.addEventListener('install', (event) => {
-                        event.waitUntil(
-                            caches.open(CACHE_NAME)
-                                .then((cache) => cache.addAll(ASSETS))
-                        );
-                    });
-
-                    self.addEventListener('fetch', (event) => {
-                        event.respondWith(
-                            caches.match(event.request)
-                                .then((response) => response || fetch(event.request))
-                        );
-                    });
-                `;
-
-                // Create a blob URL for the service worker
-                const blob = new Blob([swContent], { type: 'application/javascript' });
-                const swUrl = URL.createObjectURL(blob);
-
-                // Register the service worker
-                navigator.serviceWorker.register(swUrl)
-                    .then(registration => {
-                        console.log('ServiceWorker registration successful');
-                    })
-                    .catch(err => {
-                        console.log('ServiceWorker registration failed: ', err);
-                    });
+                const swUrl = 'https://dharunvm2000.github.io/CFT_calc/sw.js';
+                
+                navigator.serviceWorker.register(swUrl, {
+                    scope: '/CFT_calc/'
+                })
+                .then(registration => {
+                    console.log('ServiceWorker registration successful with scope:', registration.scope);
+                })
+                .catch(err => {
+                    console.log('ServiceWorker registration failed:', err);
+                });
             });
         }
+
     </script>
 </body>
 </html>
