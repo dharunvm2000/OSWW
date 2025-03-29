@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CFT Calculator | OSWW Group</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --gray: #95a5a6;
+            --success: #27ae60;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-top: 5px solid var(--secondary);
+        }
+        
+        .header {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        h1 {
+            color: var(--primary);
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo {
+            color: var(--secondary);
+            font-size: 24px;
+        }
+        
+        .group-name {
+            color: var(--gray);
+            font-size: 14px;
+            font-style: italic;
+        }
+        
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid var(--secondary);
+        }
+        
+        .card-title {
+            color: var(--primary);
+            margin: 0 0 20px 0;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+        
+        input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+        
+        input:focus {
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+            outline: none;
+        }
+        
+        .unit-toggle {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--secondary);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+        
+        .toggle-label {
+            font-size: 14px;
+            color: var(--dark);
+            font-weight: 500;
+        }
+        
+        button {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        #result, #display {
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            border-left: 4px solid var(--success);
+        }
+        
+        .calculation-steps {
+            margin: 15px 0 0 0;
+            padding-left: 20px;
+        }
+        
+        .adjusted-value {
+            font-weight: bold;
+            color: var(--accent);
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+            flex-wrap: wrap;
+        }
+        
+        .result-item span:first-child {
+            margin-right: 10px;
+            margin-bottom: 5px;
+        }
+        
+        .total {
+            font-size: 18px;
+            color: var(--success);
+            margin-top: 10px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        
+        .section-title {
+            margin: 20px 0 10px 0;
+            color: var(--dark);
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .error-message {
+            color: var(--accent);
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            #display, #result {
+                padding: 15px;
+            }
+            
+            .result-item {
+                flex-direction: column;
+            }
+            
+            .card {
+                padding: 20px 15px;
+            }
+            
+            .section-title {
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-calculator logo"></i> CFT Calculator</h1>
+            <span class="group-name">by OSWW Group</span>
+        </div>
+        
+        <div class="card">
+            <h3 class="card-title"><i class="fas fa-ruler-combined"></i> Enter Dimensions</h3>
+            
+            <div class="unit-toggle">
+                <span class="toggle-label">inches</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="unit-toggle">
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-label">cm</span>
+            </div>
+            
+            <div class="grid">
+                <div class="input-group">
+                    <label for="length">Length (<span id="length-unit-label">inches</span>)</label>
+                    <input type="number" id="length" step="0.01" placeholder="Enter length">
+                    <div class="error-message" id="length-error">Maximum value is 120 inches or 300 cm</div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="breadth">Breadth (<span id="breadth-unit-label">inches</span>)</label>
+                    <input type="number" id="breadth" step="0.01" placeholder="Enter breadth">
+                    <div class="error-message" id="breadth-error">Maximum value is 120 inches or 300 cm</div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="height">Height (<span id="height-unit-label">inches</span>)</label>
+                    <input type="number" id="height" step="0.01" placeholder="Enter height">
+                    <div class="error-message" id="height-error">Maximum value is 120 inches or 300 cm</div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="cost">Cost per CFT (₹)</label>
+                    <input type="number" id="cost" step="0.01" placeholder="Enter cost">
+                </div>
+            </div>
+            
+            <button id="calculate"><i class="fas fa-calculator"></i> Calculate</button>
+        </div>
+        
+        <div id="display" class="card"></div>
+        <div id="result" class="card"></div>
+    </div>
+
+    <script>
+        // Standard size array with 54 added
+        const standardSizes = [12, 18, 24, 30, 36, 42, 48, 54, 60, 72, 84, 96, 108, 120, 144];
+        
+        // Current unit state
+        let currentUnit = 'inches';
+        
+        // Function to convert cm to inches
+        function cmToInches(cm) {
+            return cm / 2.54;
+        }
+        
+        // Function to find next higher standard size for all dimensions
+        function findNextStandardSize(input, dimensionType) {
+            let value = parseFloat(input);
+            
+            // Add 3 to length as specified
+            if (dimensionType === 'length') {
+                value += 3;
+            }
+            
+            // Find next higher standard size for all dimensions
+            for (let size of standardSizes) {
+                if (size >= value) {
+                    return size;
+                }
+            }
+            
+            // If value is larger than all standard sizes, return the largest
+            return standardSizes[standardSizes.length - 1];
+        }
+        
+        // Validate input based on current unit
+        function validateInput(value, inputId) {
+            const errorElement = document.getElementById(`${inputId}-error`);
+            const maxValue = currentUnit === 'inches' ? 120 : 300;
+            
+            if (value && parseFloat(value) > maxValue) {
+                errorElement.style.display = 'block';
+                return false;
+            } else {
+                errorElement.style.display = 'none';
+                return true;
+            }
+        }
+        
+        // Unit toggle functionality
+        document.getElementById('unit-toggle').addEventListener('change', function() {
+            currentUnit = this.checked ? 'cm' : 'inches';
+            
+            // Update all unit labels
+            document.getElementById('length-unit-label').textContent = currentUnit;
+            document.getElementById('breadth-unit-label').textContent = currentUnit;
+            document.getElementById('height-unit-label').textContent = currentUnit;
+            
+            // Revalidate inputs when unit changes
+            validateInput(document.getElementById('length').value, 'length');
+            validateInput(document.getElementById('breadth').value, 'breadth');
+            validateInput(document.getElementById('height').value, 'height');
+        });
+        
+        // Add input validation listeners
+        document.getElementById('length').addEventListener('input', function() {
+            validateInput(this.value, 'length');
+        });
+        
+        document.getElementById('breadth').addEventListener('input', function() {
+            validateInput(this.value, 'breadth');
+        });
+        
+        document.getElementById('height').addEventListener('input', function() {
+            validateInput(this.value, 'height');
+        });
+        
+        document.getElementById('calculate').addEventListener('click', function() {
+            // Get input values
+            const lengthInput = document.getElementById('length').value;
+            const breadthInput = document.getElementById('breadth').value;
+            const heightInput = document.getElementById('height').value;
+            const costInput = document.getElementById('cost').value;
+            
+            // Validate inputs
+            if (!lengthInput || !breadthInput || !heightInput || !costInput) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            if (isNaN(lengthInput) || isNaN(breadthInput) || isNaN(heightInput) || isNaN(costInput)) {
+                alert('Please enter valid numbers');
+                return;
+            }
+            
+            // Validate dimensions don't exceed limits
+            if (!validateInput(lengthInput, 'length') || 
+                !validateInput(breadthInput, 'breadth') || 
+                !validateInput(heightInput, 'height')) {
+                alert('Please correct the input values - maximum dimensions are 120 inches or 300 cm');
+                return;
+            }
+            
+            // Convert all inputs to inches first if they're in cm
+            const lengthInInches = currentUnit === 'cm' ? cmToInches(parseFloat(lengthInput)) : parseFloat(lengthInput);
+            const breadthInInches = currentUnit === 'cm' ? cmToInches(parseFloat(breadthInput)) : parseFloat(breadthInput);
+            const heightInInches = currentUnit === 'cm' ? cmToInches(parseFloat(heightInput)) : parseFloat(heightInput);
+            const cost = parseFloat(costInput);
+            
+            // Calculate adjusted dimensions (always rounding up to standard sizes)
+            const length = findNextStandardSize(lengthInInches, 'length');
+            const breadth = findNextStandardSize(breadthInInches, 'breadth');
+            const height = findNextStandardSize(heightInInches, 'height');
+            
+            // Calculate areas for all 6 sides
+            const area1 = length * breadth * 2;  // front and back
+            const area2 = breadth * height * 2;  // left and right
+            const area3 = length * height * 2;   // top and bottom
+            const totalArea = area1 + area2 + area3;
+            
+            // Calculate CFT and total cost
+            const cft = totalArea / 1728;  // convert sq.inches to cubic feet
+            const totalCost = cft * cost;
+            
+            // Display detailed calculation - optimized for mobile
+            document.getElementById('display').innerHTML = `
+                <h3 class="card-title"><i class="fas fa-cube"></i> Detailed Calculation</h3>
+                
+                <div class="section-title">Original Dimensions</div>
+                <div class="result-item">
+                    <span>Size:</span>
+                    <span>${lengthInput} ${currentUnit} × ${breadthInput} ${currentUnit} × ${heightInput} ${currentUnit}</span>
+                </div>
+                
+                <div class="section-title">Converted to Inches</div>
+                <div class="result-item">
+                    <span>Size:</span>
+                    <span>${lengthInInches.toFixed(2)}" × ${breadthInInches.toFixed(2)}" × ${heightInInches.toFixed(2)}"</span>
+                </div>
+                
+                <div class="section-title">Adjusted Dimensions</div>
+                <div class="result-item">
+                    <span>Size:</span>
+                    <span class="adjusted-value">${length}" (L+3) × ${breadth}" × ${height}"</span>
+                </div>
+                
+                <div class="section-title">Surface Area Calculation</div>
+                <div class="result-item">
+                    <span>Front & Back:</span>
+                    <span>${length}" × ${breadth}" × 2 = ${area1} sq.in</span>
+                </div>
+                <div class="result-item">
+                    <span>Left & Right:</span>
+                    <span>${breadth}" × ${height}" × 2 = ${area2} sq.in</span>
+                </div>
+                <div class="result-item">
+                    <span>Top & Bottom:</span>
+                    <span>${length}" × ${height}" × 2 = ${area3} sq.in</span>
+                </div>
+                <div class="result-item total">
+                    <span>Total Area:</span>
+                    <span>${totalArea} sq.in</span>
+                </div>
+                <div class="result-item">
+                    <span>Conversion:</span>
+                    <span>${totalArea} ÷ 1728 = ${cft.toFixed(4)} CFT</span>
+                </div>
+            `;
+            
+            // Display final result
+            document.getElementById('result').innerHTML = `
+                <h3 class="card-title"><i class="fas fa-file-invoice-dollar"></i> Final Result</h3>
+                <div class="result-item">
+                    <span>Total Volume:</span>
+                    <span>${cft.toFixed(4)} CFT</span>
+                </div>
+                <div class="result-item">
+                    <span>Cost per CFT:</span>
+                    <span>₹${cost.toFixed(2)}</span>
+                </div>
+                <div class="result-item total">
+                    <span>Total Cost:</span>
+                    <span>₹${totalCost.toFixed(2)}</span>
+                </div>
+            `;
+            
+            // Show results
+            document.getElementById('display').style.display = 'block';
+            document.getElementById('result').style.display = 'block';
+        });
+    </script>
+</body>
+</html>
