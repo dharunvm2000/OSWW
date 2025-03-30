@@ -426,23 +426,29 @@
             }
         }
         
-        // Function to increment CFT value in 0.5 increments
         function incrementCFT() {
-            const decimalPart = roundedCFT % 1;
-        
+            // Get the decimal part with precision to handle floating point issues
+            const decimalPart = Math.round((roundedCFT % 1) * 100) / 100;
+    
             if (decimalPart === 0) {
+            // If whole number, add 0.5 (e.g., 2.0 → 2.5)
                 roundedCFT += 0.5;
-            } else if (decimalPart < 0.5) {
-                roundedCFT = Math.floor(roundedCFT) + 0.5;
             } else if (decimalPart === 0.5) {
+                // If exactly 0.5, round up to next whole (e.g., 2.5 → 3.0)
                 roundedCFT = Math.ceil(roundedCFT);
             } else {
-                roundedCFT = Math.ceil(roundedCFT);
+                // For any other decimal, round to next 0.5
+                // First get the floor value
+                const floorValue = Math.floor(roundedCFT);
+                // Then check if we need to add 0.5 or 1.0
+                roundedCFT = decimalPart < 0.5 ? floorValue + 0.5 : floorValue + 1.0;
             }
-        
+    
+            // Ensure we don't have floating point precision issues
+            roundedCFT = Math.round(roundedCFT * 10) / 10;
+    
             updateResultDisplay();
         }
-
         
         // Update the result display with current values
         function updateResultDisplay() {
