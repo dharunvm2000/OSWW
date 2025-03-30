@@ -426,24 +426,23 @@
             }
         }
         
-        // Function to increment CFT value to next 0.5 increment
+        // Function to increment CFT value in 0.5 increments
         function incrementCFT() {
-            // Get the decimal part
             const decimalPart = roundedCFT % 1;
         
             if (decimalPart === 0) {
-                // If whole number, add 0.5
                 roundedCFT += 0.5;
-            } else if (decimalPart <= 0.5) {
-                // If <= 0.5, round up to 0.5
+            } else if (decimalPart < 0.5) {
                 roundedCFT = Math.floor(roundedCFT) + 0.5;
+            } else if (decimalPart === 0.5) {
+                roundedCFT = Math.ceil(roundedCFT);
             } else {
-                // If > 0.5, round up to next whole number
                 roundedCFT = Math.ceil(roundedCFT);
             }
         
             updateResultDisplay();
         }
+
         
         // Update the result display with current values
         function updateResultDisplay() {
