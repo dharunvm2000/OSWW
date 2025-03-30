@@ -253,6 +253,47 @@
             display: none;
         }
         
+        .increment-btn {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: all 0.2s;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .increment-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .increment-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .volume-value {
+            min-width: 80px;
+            display: inline-block;
+            text-align: right;
+        }
+        
         @media (max-width: 768px) {
             .grid {
                 grid-template-columns: 1fr;
@@ -342,6 +383,9 @@
         
         // Current unit state
         let currentUnit = 'inches';
+        let calculatedCFT = 0;
+        let roundedCFT = 0;
+        let costPerCFT = 0;
         
         // Function to convert cm to inches
         function cmToInches(cm) {
@@ -380,6 +424,59 @@
                 errorElement.style.display = 'none';
                 return true;
             }
+        }
+        
+        // Function to increment CFT value to next 0.5 increment
+        function incrementCFT() {
+            // Get the decimal part
+            const decimalPart = roundedCFT % 1;
+        
+            if (decimalPart === 0) {
+                // If whole number, add 0.5
+                roundedCFT += 0.5;
+            } else if (decimalPart <= 0.5) {
+                // If <= 0.5, round up to 0.5
+                roundedCFT = Math.floor(roundedCFT) + 0.5;
+            } else {
+                // If > 0.5, round up to next whole number
+                roundedCFT = Math.ceil(roundedCFT);
+            }
+        
+            updateResultDisplay();
+        }
+        
+        // Update the result display with current values
+        function updateResultDisplay() {
+            const totalCost = roundedCFT * costPerCFT;
+            
+            document.getElementById('result').innerHTML = `
+                <h3 class="card-title"><i class="fas fa-file-invoice-dollar"></i> Final Result</h3>
+                
+                <div class="result-item">
+                    <span>Calculated Volume:</span>
+                    <span>${calculatedCFT.toFixed(4)} CFT</span>
+                </div>
+                <div class="result-item">
+                    <span>Total Volume:</span>
+                    <div class="volume-control">
+                        <span class="volume-value ${roundedCFT !== calculatedCFT ? 'adjusted-value' : ''}">${roundedCFT.toFixed(4)} CFT</span>
+                        <button class="increment-btn" id="increment-btn" title="Increase to next 0.5 increment">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="result-item">
+                    <span>Cost per CFT:</span>
+                    <span>₹${costPerCFT.toFixed(2)}</span>
+                </div>
+                <div class="result-item total">
+                    <span>Total Cost:</span>
+                    <span>₹${totalCost.toFixed(2)}</span>
+                </div>
+            `;
+            
+            // Add event listener to the increment button
+            document.getElementById('increment-btn').addEventListener('click', incrementCFT);
         }
         
         // Unit toggle functionality
@@ -440,7 +537,7 @@
             const lengthInInches = currentUnit === 'cm' ? cmToInches(parseFloat(lengthInput)) : parseFloat(lengthInput);
             const breadthInInches = currentUnit === 'cm' ? cmToInches(parseFloat(breadthInput)) : parseFloat(breadthInput);
             const heightInInches = currentUnit === 'cm' ? cmToInches(parseFloat(heightInput)) : parseFloat(heightInput);
-            const cost = parseFloat(costInput);
+            costPerCFT = parseFloat(costInput);
             
             // Calculate adjusted dimensions (always rounding up to standard sizes)
             const length = findNextStandardSize(lengthInInches, 'length');
@@ -454,8 +551,8 @@
             const totalArea = area1 + area2 + area3;
             
             // Calculate CFT and total cost
-            const cft = totalArea / 1728;  // convert sq.inches to cubic feet
-            const totalCost = cft * cost;
+            calculatedCFT = totalArea / 1728;  // convert sq.inches to cubic feet
+            roundedCFT = calculatedCFT;
             
             // Display detailed calculation - optimized for mobile
             document.getElementById('display').innerHTML = `
@@ -498,26 +595,12 @@
                 </div>
                 <div class="result-item">
                     <span>Conversion:</span>
-                    <span>${totalArea} ÷ 1728 = ${cft.toFixed(4)} CFT</span>
+                    <span>${totalArea} ÷ 1728 = ${calculatedCFT.toFixed(4)} CFT</span>
                 </div>
             `;
             
-            // Display final result
-            document.getElementById('result').innerHTML = `
-                <h3 class="card-title"><i class="fas fa-file-invoice-dollar"></i> Final Result</h3>
-                <div class="result-item">
-                    <span>Total Volume:</span>
-                    <span>${cft.toFixed(4)} CFT</span>
-                </div>
-                <div class="result-item">
-                    <span>Cost per CFT:</span>
-                    <span>₹${cost.toFixed(2)}</span>
-                </div>
-                <div class="result-item total">
-                    <span>Total Cost:</span>
-                    <span>₹${totalCost.toFixed(2)}</span>
-                </div>
-            `;
+            // Update the result display
+            updateResultDisplay();
             
             // Show results
             document.getElementById('display').style.display = 'block';
