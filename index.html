@@ -15,6 +15,12 @@
             --gray: #95a5a6;
             --success: #27ae60;
         }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 20px; /* adds some space at the top when scrolling to an element */
+            scroll-snap-type: y proximity;
+        }
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -610,6 +616,9 @@
             // Show results
             document.getElementById('display').style.display = 'block';
             document.getElementById('result').style.display = 'block';
+
+            // Scroll to the detailed calculation section
+            document.getElementById('display').scrollIntoView({ behavior: 'smooth' });
         });
     </script>
 </body>
