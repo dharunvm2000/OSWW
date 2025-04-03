@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSWW - Quote Generator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #1a5276;
+            --secondary-color: #2980b9;
+            --accent-color: #e67e22;
+            --company-name-color: #c00;
+        }
+        
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+        
+        .header {
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0;
+            flex-wrap: wrap;
+        }
+        
+        .gst-info {
+            font-size: 13px;
+            color: #555;
+            flex: 1;
+            min-width: 150px;
+            margin-top: 2px;
+            
+        }
+        
+        .logo-container {
+            margin: 0 5px;
+            text-align: center;
+        }
+        
+        .logo {
+            height: 50px;
+        }
+        
+        .contact-info {
+            font-size: 13px;
+            color: #555;
+            flex: 1;
+            text-align: right;
+            min-width: 150px;
+            margin-top: 2px;
+        }
+        
+        .company-details {
+            text-align: center;
+        }
+        
+        .company-name {
+            color: var(--company-name-color);
+            font-size: 30px;
+            font-weight: 900;
+            margin: 0;
+            padding: 0;
+            line-height: 1.1;
+            letter-spacing: 0.5px;
+        }
+        
+        .company-tagline {
+            color: var(--secondary-color);
+            font-size: 14px;
+            margin: 5px 0 5px 0;
+        }
+        
+        .address {
+            font-size: 12px;
+            color: #555;
+            margin: 5px 0 0 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .quotation-title {
+            text-align: center;
+            color: var(--primary-color);
+            font-size: 20px;
+            margin: 5px 0 15px 0;
+            font-weight: bold;
+        }
+        
+        .quote-title {
+            text-align: center;
+            color: var(--primary-color);
+            font-size: 20px;
+            margin: 10px 0;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        label.required:after {
+            content: " *";
+            color: red;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        input[type="number"] {
+            appearance: textfield;
+        }
+        
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        .client-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 600px) {
+            .client-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-top {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .gst-info, .contact-info {
+                display: none;
+            }
+            
+            .logo-container {
+                margin: 5px 0;
+                order: -1;
+            }
+            
+            .company-name {
+                font-size: 20px;
+            }
+        }
+        
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            margin: 20px 0;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+        
+        .products-table th, .products-table td {
+            border: 1px solid #111;
+            padding: 10px;
+            text-align: left;
+        }
+        
+        .products-table th {
+            background-color: var(--primary-color);
+            color: white;
+            white-space: nowrap;
+        }
+        
+        .products-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        
+        .add-product-btn {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .add-product-btn:hover {
+            background-color: #2471a3;
+        }
+        
+        .delete-product-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .delete-product-btn:hover {
+            background-color: #c0392b;
+        }
+        
+        .terms-section {
+            margin: 20px 0;
+        }
+        
+        .terms-section h3 {
+            color: var(--primary-color);
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #555;
+            font-style: italic;
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #154360;
+        }
+        
+        .btn-secondary {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #d35400;
+        }
+        
+        .quote-date {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+        
+        .salutation {
+            margin-bottom: 20px;
+        }
+        
+        .thank-you {
+            margin: 40px 0;
+            font-style: italic;
+        }
+        
+        .total-section {
+            text-align: right;
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .bulleted-input ul {
+            list-style-type: disc;
+            padding-left: 20px;
+            margin: 10px 0;
+        }
+        .bulleted-input li {
+            padding: 5px 0;
+            outline: none;
+            min-height: 20px;
+        }
+        .bulleted-input li:focus {
+            background-color: #f5f5f5;
+        }
+        .add-bullet {
+            color: #2980b9;
+            cursor: pointer;
+            list-style-type: none;
+            margin-left: -20px;
+        }
+        .add-bullet:hover {
+            text-decoration: underline;
+        }
+
+        .hidden {
+            display: none;
+        }
+        
+        #quotePreview {
+            padding: 20px;
+            background: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 30px;
+        }
+        
+        @media print {
+            body {
+                padding: 0;
+                font-size: 12pt;
+            }
+            
+            body * {
+                visibility: hidden;
+            }
+            
+            #quotePreview, #quotePreview * {
+                visibility: visible;
+            }
+            
+            #quotePreview {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 20px;
+                box-shadow: none;
+                font-size: 12pt;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+            
+            .header {
+                page-break-inside: avoid;
+            }
+            
+            .gst-info, .contact-info {
+                display: block !important;
+            }
+            
+            .products-table th {
+                background-color: transparent !important;
+                color: #000 !important;
+                font-weight: bold;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .products-table tr:nth-child(even) {
+                background-color: transparent !important;
+            }
+            
+            .products-table td {
+                border-color: #000 !important;
+            }
+            
+            .action-buttons {
+                display: none !important;
+            }
+            
+            @page {
+                size: A4 portrait;
+                margin: 5mm 5mm 5mm 5mm;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="no-print">
+            <div class="header">
+                <div class="header-top">
+                    <div class="gst-info">
+                        GSTIN/UIN: 33BGVPM8309L1ZP<br>
+                        State: Tamilnadu, Code: 33
+                    </div>
+                    <div class="logo-container">
+                        <img src="https://github.com/dharunvm2000/CFT_calc/blob/c45a4a1f0b2814829da3adde65ce674a42240705/logo.png?raw=true" alt="OM SAKTHI WOOD WORKS Logo" class="logo">
+                    </div>
+                    <div class="contact-info">
+                        Ph.no: 9840352439 / 8056264269<br>
+                        Email: omsakthiwoodworks@gmail.com
+                    </div>
+                </div>
+                <div class="company-details">
+                    <div class="company-name">OM SAKTHI WOOD WORKS</div>
+                    <div class="company-tagline">Wooden Boxes and Pallets | Wooden Crate Boxes | Plywood Boxes and Pallets</div>
+                    <div class="address">
+                        Survey No.150, Gangal Amman Kovil Street Extension, Near Hindustan International School, Karapakkam, Chennai - 600097
+                    </div>
+                </div>
+            </div>
+            
+            <h1 class="quote-title">QUOTE GENERATOR</h1>
+            
+            <div class="client-details">
+                <div class="form-group">
+                    <label for="quoteNumber" class="required">Quote Number</label>
+                    <input type="text" id="quoteNumber" placeholder="Auto-generated" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="quoteDate" class="required">Date</label>
+                    <input type="date" id="quoteDate">
+                </div>
+                
+                <div class="form-group">
+                    <label for="clientName" class="required">Client Name</label>
+                    <input type="text" id="clientName" placeholder="Enter client name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="clientAddress">Address</label>
+                    <textarea id="clientAddress" rows="3" placeholder="Enter client address"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="clientEmail">Email</label>
+                    <input type="email" id="clientEmail" placeholder="Enter client email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="clientPhone">Phone Number</label>
+                    <input type="tel" id="clientPhone" placeholder="Enter client phone number">
+                </div>
+                
+                <div class="form-group">
+                    <label for="clientGST">GST Number (if applicable)</label>
+                    <input type="text" id="clientGST" placeholder="Enter client GST number">
+                </div>
+            </div>
+            
+            <div class="form-group salutation">
+                <label for="salutation" class="required">Salutation</label>
+                <input type="text" id="salutation" class="salutation-input" value="Dear Sir/Madam,">
+            </div>
+            
+            <h3>Products/Services</h3>
+            <div class="table-wrapper">
+                <table class="products-table" id="productsTable">
+                    <thead>
+                        <tr>
+                            <th width="8%">S.No</th>
+                            <th>Description</th>
+                            <th width="10%">Qty.</th>
+                            <th width="18%">Unit Price (₹)</th>
+                            <th width="15%">Total (₹)</th>
+                            <th width="10%">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td><input type="text" class="product-desc" placeholder="Product description"></td>
+                            <td><input type="number" class="product-qty" min="1" value="1"></td>
+                            <td><input type="number" class="product-price" min="0" step="0.01" placeholder="0.00"></td>
+                            <td class="product-total">0.00</td>
+                            <td><button type="button" class="delete-product-btn"><i class="fas fa-trash"></i></button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <button type="button" class="add-product-btn" id="addProductBtn"><i class="fas fa-plus"></i> Add Product</button>
+            
+            <!-- NEW VERSION - BULLET POINTS -->
+            <div class="terms-section">
+                <h3>Payment Terms</h3>
+                <div class="bulleted-input" id="paymentTerms">
+                    <ul>
+                        <li contenteditable="true">Payment is 45 days net upon the date of delivery.</li>
+                        <li contenteditable="true">Payment via bank transfer/cheque in favor of OM SAKTHI WOOD WORKS</li>
+                        <li class="add-bullet" onclick="addBulletPoint(this)">+ Add another term</li>
+                    </ul>
+                </div>
+                
+                <h3>Notes</h3>
+                <div class="bulleted-input" id="notes">
+                    <ul>
+                        <li contenteditable="true">Prices inclusive of GST 12%</li>
+                        <li contenteditable="true">For any queries, feel free to contact us.</li>
+                        <li class="add-bullet" onclick="addBulletPoint(this)">+ Add another note</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button type="button" class="btn btn-primary" id="previewBtn">Preview Quote</button>
+                <button type="button" class="btn btn-secondary" id="resetBtn">Reset Form</button>
+            </div>
+        </div>
+        
+        <div id="quotePreview" class="hidden">
+            <div class="header">
+                <div class="header-top">
+                    <div class="gst-info no-mobile">
+                        GSTIN/UIN: 33BGVPM8309L1ZP<br>
+                        State: Tamilnadu, Code: 33
+                    </div>
+                    <div class="logo-container">
+                        <img src="https://github.com/dharunvm2000/CFT_calc/blob/c45a4a1f0b2814829da3adde65ce674a42240705/logo.png?raw=true" alt="OM SAKTHI WOOD WORKS Logo" class="logo">
+                    </div>
+                    <div class="contact-info no-mobile">
+                        Ph.no: 9840352439 / 8056264269<br>
+                        Email: omsakthiwoodworks@gmail.com
+                    </div>
+                </div>
+                <div class="company-details">
+                    <div class="company-name">OM SAKTHI WOOD WORKS</div>
+                    <div class="company-tagline">Wooden Boxes and Pallets | Wooden Crate Boxes | Plywood Boxes and Pallets</div>
+                    <div class="address">
+                        Survey No.150, Gangal Amman Kovil Street Extension, Near Hindustan International School, Karapakkam, Chennai - 600097
+                    </div>
+                </div>
+            </div>
+            
+            <div class="quotation-title">QUOTATION</div>
+            
+            <div class="quote-date">
+                <strong>Quote No:</strong> <span id="previewQuoteNumber"></span><br>
+                <strong>Date:</strong> <span id="previewQuoteDate"></span>
+            </div>
+            
+            <div class="client-details-preview">
+                <strong>To:</strong><br>
+                <span id="previewClientName"></span><br>
+                <span id="previewClientAddress"></span><br>
+                <span id="previewClientEmail"></span><br>
+                <span id="previewClientPhone"></span><br>
+                <span id="previewClientGST"></span>
+            </div>
+            
+            <div class="salutation">
+                <strong><span id="previewSalutation"></span></strong>
+            </div>
+            
+            <p>Thank you for giving us the opportunity to serve you. We are pleased to provide the following quote for your consideration:</p>
+            
+            <div class="table-wrapper">
+                <table class="products-table">
+                    <thead>
+                        <tr>
+                            <th width="8%">S.No</th>
+                            <th>Description</th>
+                            <th width="8%">Qty.</th>
+                            <th width="18%">Unit Price (₹)</th>
+                            <th width="15%">Total (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="previewProductsTable">
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="total-section">
+                <div>Subtotal: ₹<span id="previewSubtotal">0.00</span></div>
+                <div>GST (12%): ₹<span id="previewGST">0.00</span></div>
+                <div>Grand Total: ₹<span id="previewGrandTotal">0.00</span></div>
+            </div>
+            
+            <div class="terms-section">
+                <h3>Payment Terms</h3>
+                <div id="previewPaymentTerms"></div>
+                
+                <h3>Notes</h3>
+                <div id="previewNotes"></div>
+            </div>
+            
+            <div class="thank-you">
+                <p>Thank you for your business. We look forward to serving you.</p>
+                <p>Warm regards,<br>OM SAKTHI WOOD WORKS</p>
+            </div>
+            
+            <div class="footer">
+                <p>Quality is never an accident; it is always the result of intelligent effort. - John Ruskin</p>
+            </div>
+            
+            <div class="action-buttons no-print">
+                <button type="button" class="btn btn-primary" id="printBtn"><i class="fas fa-print"></i> Print Quote</button>
+                <button type="button" class="btn btn-secondary" id="backBtn"><i class="fas fa-arrow-left"></i> Back to Edit</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set today's date as default
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('quoteDate').value = today;
+            
+            // Generate quote number
+            generateQuoteNumber();
+            
+            // Update quote number when date changes
+            document.getElementById('quoteDate').addEventListener('change', generateQuoteNumber);
+            
+            // Add product row
+            document.getElementById('addProductBtn').addEventListener('click', function() {
+                const tbody = document.querySelector('#productsTable tbody');
+                const rowCount = tbody.rows.length + 1;
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td>${rowCount}</td>
+                    <td><input type="text" class="product-desc" placeholder="Product description"></td>
+                    <td><input type="number" class="product-qty" min="1" value="1"></td>
+                    <td><input type="number" class="product-price" min="0" step="0.01" placeholder="0.00"></td>
+                    <td class="product-total">0.00</td>
+                    <td><button type="button" class="delete-product-btn"><i class="fas fa-trash"></i></button></td>
+                `;
+                tbody.appendChild(newRow);
+                
+                // Add event listeners to new inputs
+                addProductRowEventListeners(newRow);
+            });
+            
+            // Add event listeners to initial product row
+            const initialRow = document.querySelector('#productsTable tbody tr');
+            addProductRowEventListeners(initialRow);
+            
+            // Delete product row
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('delete-product-btn') || e.target.closest('.delete-product-btn')) {
+                    const row = e.target.closest('tr');
+                    if (document.querySelectorAll('#productsTable tbody tr').length > 1) {
+                        row.remove();
+                        updateSerialNumbers();
+                        calculateTotals();
+                    } else {
+                        alert('You must have at least one product in the quote.');
+                    }
+                }
+            });
+            
+            // Update serial numbers after row deletion
+            function updateSerialNumbers() {
+                const rows = document.querySelectorAll('#productsTable tbody tr');
+                rows.forEach((row, index) => {
+                    row.cells[0].textContent = index + 1;
+                });
+            }
+            
+            // Preview quote
+            document.getElementById('previewBtn').addEventListener('click', function() {
+                if (validateForm()) {
+                    updatePreview();
+                    document.querySelector('.no-print').classList.add('hidden');
+                    document.getElementById('quotePreview').classList.remove('hidden');
+                }
+            });
+            
+            // Back to edit
+            document.getElementById('backBtn').addEventListener('click', function() {
+                document.querySelector('.no-print').classList.remove('hidden');
+                document.getElementById('quotePreview').classList.add('hidden');
+            });
+            
+            // Print quote
+            document.getElementById('printBtn').addEventListener('click', function() {
+                window.print();
+            });
+            
+            // Reset form
+            document.getElementById('resetBtn').addEventListener('click', function() {
+                if (confirm('Are you sure you want to reset the form? All entered data will be lost.')) {
+                    document.getElementById('clientName').value = '';
+                    document.getElementById('clientAddress').value = '';
+                    document.getElementById('clientEmail').value = '';
+                    document.getElementById('clientPhone').value = '';
+                    document.getElementById('clientGST').value = '';
+                    document.getElementById('salutation').value = 'Dear Sir/Madam,';
+                    document.getElementById('paymentTerms').value = '50% advance payment and 50% before delivery. Payment to be made via bank transfer or cheque in favor of OM SAKTHI WOOD WORKS.';
+                    document.getElementById('notes').value = 'Prices are inclusive of GST 12%. Delivery within 15 days from the date of order confirmation. Warranty as per product specifications.';
+                    
+                    const tbody = document.querySelector('#productsTable tbody');
+                    while (tbody.rows.length > 1) {
+                        tbody.deleteRow(1);
+                    }
+                    
+                    // Reset the first row
+                    const firstRow = tbody.rows[0];
+                    firstRow.querySelector('.product-desc').value = '';
+                    firstRow.querySelector('.product-qty').value = 1;
+                    firstRow.querySelector('.product-price').value = '';
+                    firstRow.querySelector('.product-total').textContent = '0.00';
+                    firstRow.cells[0].textContent = '1';
+                    
+                    // Set today's date and generate new quote number
+                    document.getElementById('quoteDate').value = today;
+                    generateQuoteNumber();
+                }
+            });
+            
+            // Helper function to generate quote number
+            function generateQuoteNumber() {
+                const dateInput = document.getElementById('quoteDate').value;
+                if (!dateInput) return;
+                
+                const date = new Date(dateInput);
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                
+                // Generate a random 3-digit number for uniqueness
+                const randomNum = Math.floor(Math.random() * 900) + 100;
+                
+                const quoteNumber = `OSWW/Q/${year}${month}${day}-${randomNum}`;
+                document.getElementById('quoteNumber').value = quoteNumber;
+            }
+            
+            // Helper function to add event listeners to product row inputs
+            function addProductRowEventListeners(row) {
+                const qtyInput = row.querySelector('.product-qty');
+                const priceInput = row.querySelector('.product-price');
+                
+                qtyInput.addEventListener('input', calculateRowTotal);
+                priceInput.addEventListener('input', calculateRowTotal);
+                
+                function calculateRowTotal() {
+                    const qty = parseFloat(qtyInput.value) || 0;
+                    const price = parseFloat(priceInput.value) || 0;
+                    const total = qty * price;
+                    row.querySelector('.product-total').textContent = total.toFixed(2);
+                    calculateTotals();
+                }
+            }
+            
+            // Calculate all row totals and grand total
+            function calculateTotals() {
+                let subtotal = 0;
+                document.querySelectorAll('#productsTable tbody tr').forEach(row => {
+                    const total = parseFloat(row.querySelector('.product-total').textContent) || 0;
+                    subtotal += total;
+                });
+                
+                const gst = subtotal * 0.12;
+                const grandTotal = subtotal + gst;
+                
+                // Update preview totals if preview is visible
+                if (!document.getElementById('quotePreview').classList.contains('hidden')) {
+                    document.getElementById('previewSubtotal').textContent = subtotal.toFixed(2);
+                    document.getElementById('previewGST').textContent = gst.toFixed(2);
+                    document.getElementById('previewGrandTotal').textContent = grandTotal.toFixed(2);
+                }
+            }
+            
+            // Validate form before preview
+            function validateForm() {
+                const clientName = document.getElementById('clientName').value.trim();
+                if (!clientName) {
+                    alert('Please enter client name');
+                    return false;
+                }
+                
+                const salutation = document.getElementById('salutation').value;
+                if (!salutation) {
+                    alert('Please enter salutation');
+                    return false;
+                }
+                
+                let hasProducts = false;
+                document.querySelectorAll('#productsTable tbody tr').forEach(row => {
+                    const desc = row.querySelector('.product-desc').value.trim();
+                    const price = row.querySelector('.product-price').value.trim();
+                    if (desc && price) {
+                        hasProducts = true;
+                    }
+                });
+                
+                if (!hasProducts) {
+                    alert('Please add at least one product with description and price');
+                    return false;
+                }
+                
+                return true;
+            }
+            
+            // Update preview with form data
+            function updatePreview() {
+                // Client details
+                document.getElementById('previewQuoteNumber').textContent = document.getElementById('quoteNumber').value;
+                
+                const quoteDate = document.getElementById('quoteDate').value;
+                const formattedDate = new Date(quoteDate).toLocaleDateString('en-IN', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                });
+                document.getElementById('previewQuoteDate').textContent = formattedDate;
+                
+                document.getElementById('previewClientName').textContent = document.getElementById('clientName').value;
+                document.getElementById('previewClientAddress').innerHTML = document.getElementById('clientAddress').value.replace(/\n/g, '<br>');
+                document.getElementById('previewClientEmail').textContent = document.getElementById('clientEmail').value;
+                document.getElementById('previewClientPhone').textContent = document.getElementById('clientPhone').value;
+                
+                const clientGST = document.getElementById('clientGST').value;
+                document.getElementById('previewClientGST').textContent = clientGST ? `GST: ${clientGST}` : '';
+                
+                // Salutation
+                document.getElementById('previewSalutation').textContent = document.getElementById('salutation').value;
+                
+                // Products
+                const previewTable = document.getElementById('previewProductsTable');
+                previewTable.innerHTML = '';
+                
+                let subtotal = 0;
+                document.querySelectorAll('#productsTable tbody tr').forEach((row, index) => {
+                    const desc = row.querySelector('.product-desc').value.trim();
+                    const qty = row.querySelector('.product-qty').value.trim();
+                    const price = parseFloat(row.querySelector('.product-price').value) || 0;
+                    const total = parseFloat(row.querySelector('.product-total').textContent) || 0;
+                    
+                    if (desc && price) {
+                        subtotal += total;
+                        
+                        const newRow = document.createElement('tr');
+                        newRow.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${desc}</td>
+                            <td>${qty}</td>
+                            <td>${price.toFixed(2)}</td>
+                            <td>${total.toFixed(2)}</td>
+                        `;
+                        previewTable.appendChild(newRow);
+                    }
+                });
+                
+                const gst = subtotal * 0.12;
+                const grandTotal = subtotal + gst;
+                
+                document.getElementById('previewSubtotal').textContent = subtotal.toFixed(2);
+                document.getElementById('previewGST').textContent = gst.toFixed(2);
+                document.getElementById('previewGrandTotal').textContent = grandTotal.toFixed(2);
+                
+                // Payment terms and notes
+                document.getElementById('previewPaymentTerms').innerHTML = 
+                    '<ul>' + 
+                    Array.from(document.querySelectorAll('#paymentTerms li:not(.add-bullet)'))
+                        .map(li => '<li>' + li.textContent + '</li>')
+                        .join('') + 
+                    '</ul>';
+
+                document.getElementById('previewNotes').innerHTML = 
+                    '<ul>' + 
+                    Array.from(document.querySelectorAll('#notes li:not(.add-bullet)'))
+                        .map(li => '<li>' + li.textContent + '</li>')
+                        .join('') + 
+                    '</ul>';
+            
+            }
+        });
+
+        //Bulletin to paymentterms and notes
+        function addBulletPoint(element) {
+            const newItem = document.createElement('li');
+            newItem.contentEditable = 'true';
+            newItem.textContent = '';
+            element.parentNode.insertBefore(newItem, element);
+            newItem.focus();
+        }
+
+    </script>
+</body>
+</html>
