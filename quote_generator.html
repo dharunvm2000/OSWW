@@ -708,17 +708,30 @@
             
             // Print quote
             document.getElementById('printBtn').addEventListener('click', function() {
-                const quoteNumber = document.getElementById('quoteNumber').value.replace(/\//g, '-');
-                const clientName = document.getElementById('clientName').value.trim().replace(/[^a-zA-Z0-9-_]/g, ' ');
+                // Store the original title
                 const originalTitle = document.title;
                 
-                document.title = `Quote_${quoteNumber}_${clientName || 'Client'}`;
+                // Set up event listeners for before and after print
+                window.addEventListener('beforeprint', function() {
+                    // Get the quote number and client name
+                    const quoteNumber = document.getElementById('quoteNumber').value.replace(/\//g, '-');
+                    const clientName = document.getElementById('clientName').value.trim().replace(/[^a-zA-Z0-9-_]/g, ' ');
+                    
+                    // Set the new title with quote number and client name
+                    document.title = `Quote_${quoteNumber}_${clientName || 'Client'}`;
+                });
                 
-                window.print();
-                
-                setTimeout(() => {
+                window.addEventListener('afterprint', function() {
+                    // Restore the original title
                     document.title = originalTitle;
-                }, 1000);
+                    
+                    // Clean up the event listeners
+                    window.removeEventListener('beforeprint', arguments.callee);
+                    window.removeEventListener('afterprint', arguments.callee);
+                });
+    
+                // Print the document
+                window.print();
             });
             
             // Reset form
