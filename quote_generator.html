@@ -353,6 +353,58 @@
             margin-top: 30px;
         }
         
+        /* Location Selection Modal */
+        .location-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .location-modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .location-modal h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+        
+        .location-options {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .location-btn {
+            padding: 15px 25px;
+            border: 2px solid var(--primary-color);
+            border-radius: 5px;
+            background-color: white;
+            color: var(--primary-color);
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .location-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
         @media print {
             body {
                 padding: 0;
@@ -418,7 +470,19 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <!-- Location Selection Modal -->
+    <div id="locationModal" class="location-modal">
+        <div class="location-modal-content">
+            <h2>Select Company Location</h2>
+            <p>Please choose the location for this quote:</p>
+            <div class="location-options">
+                <button class="location-btn" id="chennaiBtn">Chennai</button>
+                <button class="location-btn" id="thanjavurBtn">Thanjavur</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container hidden" id="mainContent">
         <div class="no-print">
             <div class="header">
                 <div class="header-top">
@@ -430,7 +494,7 @@
                         <img src="logo.png" alt="OM SAKTHI WOOD WORKS Logo" class="logo">
                     </div>
                     <div class="contact-info">
-                        Ph.no: 9840352439 / 8056264269<br>
+                        Ph.no: <span class="phone-numbers">9840352439 / 8056264269</span><br>
                         Email: omsakthiwoodworks@gmail.com
                     </div>
                 </div>
@@ -438,7 +502,7 @@
                     <div class="company-name">OM SAKTHI WOOD WORKS</div>
                     <div class="company-tagline">Wooden Boxes and Pallets | Wooden Crate Boxes | Plywood Boxes and Pallets</div>
                     <div class="address">
-                        Survey No.150, Gangal Amman Kovil Street Extension, Near Hindustan International School, Karapakkam, Chennai - 600097
+                        <span class="address-text">Survey No.150, Gangal Amman Kovil Street Extension, Near Hindustan International School, Karapakkam, Chennai - 600 097</span>
                     </div>
                 </div>
             </div>
@@ -553,7 +617,7 @@
                         <img src="https://github.com/dharunvm2000/CFT_calc/blob/c45a4a1f0b2814829da3adde65ce674a42240705/logo.png?raw=true" alt="OM SAKTHI WOOD WORKS Logo" class="logo">
                     </div>
                     <div class="contact-info no-mobile">
-                        Ph.no: 9840352439 / 8056264269<br>
+                        Ph.no: <span class="phone-numbers">9840352439 / 8056264269</span><br>
                         Email: omsakthiwoodworks@gmail.com
                     </div>
                 </div>
@@ -561,7 +625,7 @@
                     <div class="company-name">OM SAKTHI WOOD WORKS</div>
                     <div class="company-tagline">Wooden Boxes and Pallets | Wooden Crate Boxes | Plywood Boxes and Pallets</div>
                     <div class="address">
-                        Survey No.150, Gangal Amman Kovil Street Extension, Near Hindustan International School, Karapakkam, Chennai - 600097
+                        <span class="address-text">Survey No.150, Gangal Amman Kovil Street Extension, Near Hindustan International School, Karapakkam, Chennai - 600 097</span>
                     </div>
                 </div>
             </div>
@@ -636,291 +700,337 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Set today's date as default
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('quoteDate').value = today;
+            // Show location modal first
+            const locationModal = document.getElementById('locationModal');
+            const mainContent = document.getElementById('mainContent');
             
-            // Generate quote number
-            generateQuoteNumber();
-            
-            // Update quote number when date changes
-            document.getElementById('quoteDate').addEventListener('change', generateQuoteNumber);
-            
-            // Add product row
-            document.getElementById('addProductBtn').addEventListener('click', function() {
-                const tbody = document.querySelector('#productsTable tbody');
-                const rowCount = tbody.rows.length + 1;
-                const newRow = document.createElement('tr');
-                newRow.innerHTML = `
-                    <td>${rowCount}</td>
-                    <td><input type="text" class="product-desc" placeholder="Product description"></td>
-                    <td><input type="number" class="product-qty" min="1" value="1"></td>
-                    <td><input type="number" class="product-price" min="0" step="0.01" placeholder="0.00"></td>
-                    <td class="product-total">0.00</td>
-                    <td><button type="button" class="delete-product-btn"><i class="fas fa-trash"></i></button></td>
-                `;
-                tbody.appendChild(newRow);
-                
-                // Add event listeners to new inputs
-                addProductRowEventListeners(newRow);
+            // Set up location selection buttons
+            document.getElementById('chennaiBtn').addEventListener('click', function() {
+                setLocation('chennai');
+                locationModal.style.display = 'none';
+                mainContent.classList.remove('hidden');
+                initializeApp();
             });
             
-            // Add event listeners to initial product row
-            const initialRow = document.querySelector('#productsTable tbody tr');
-            addProductRowEventListeners(initialRow);
+            document.getElementById('thanjavurBtn').addEventListener('click', function() {
+                setLocation('thanjavur');
+                locationModal.style.display = 'none';
+                mainContent.classList.remove('hidden');
+                initializeApp();
+            });
             
-            // Delete product row
-            document.addEventListener('click', function(e) {
-                if (e.target.classList.contains('delete-product-btn') || e.target.closest('.delete-product-btn')) {
-                    const row = e.target.closest('tr');
-                    if (document.querySelectorAll('#productsTable tbody tr').length > 1) {
-                        row.remove();
-                        updateSerialNumbers();
-                        calculateTotals();
-                    } else {
-                        alert('You must have at least one product in the quote.');
-                    }
+            function setLocation(location) {
+                if (location === 'chennai') {
+                    // Chennai details
+                    document.querySelector('.address-text').textContent = 
+                        'Survey No.150, Gangal Amman Kovil Street Extension, Near Hindustan International School, Karapakkam, Chennai - 600 097';
+                    document.querySelector('.phone-numbers').textContent = '9840352439 / 8056264269';
+                } else if (location === 'thanjavur') {
+                    // Thanjavur details
+                    document.querySelector('.address-text').textContent = 
+                        'Plot no.15, Fathima Nagar, Vilar Road, Thanjavur - 613 006';
+                    document.querySelector('.phone-numbers').textContent = '9840352439 / 9361286531';
                 }
-            });
-            
-            // Update serial numbers after row deletion
-            function updateSerialNumbers() {
-                const rows = document.querySelectorAll('#productsTable tbody tr');
-                rows.forEach((row, index) => {
-                    row.cells[0].textContent = index + 1;
+                
+                // Update preview sections as well
+                const previewAddress = document.querySelectorAll('.address-text');
+                const previewPhones = document.querySelectorAll('.phone-numbers');
+                
+                previewAddress.forEach(el => {
+                    el.textContent = document.querySelector('.address-text').textContent;
+                });
+                
+                previewPhones.forEach(el => {
+                    el.textContent = document.querySelector('.phone-numbers').textContent;
                 });
             }
             
-            // Preview quote
-            document.getElementById('previewBtn').addEventListener('click', function() {
-                if (validateForm()) {
-                    updatePreview();
-                    document.querySelector('.no-print').classList.add('hidden');
-                    document.getElementById('quotePreview').classList.remove('hidden');
-                }
-            });
-            
-            // Back to edit
-            document.getElementById('backBtn').addEventListener('click', function() {
-                document.querySelector('.no-print').classList.remove('hidden');
-                document.getElementById('quotePreview').classList.add('hidden');
-            });
-            
-            // Print quote
-            document.getElementById('printBtn').addEventListener('click', function() {
-                // Store the original title
-                const originalTitle = document.title;
+            function initializeApp() {
+                // Set today's date as default
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('quoteDate').value = today;
                 
-                // Set up event listeners for before and after print
-                window.addEventListener('beforeprint', function() {
-                    // Get the quote number and client name
-                    const quoteNumber = document.getElementById('quoteNumber').value.replace(/\//g, '-');
-                    const clientName = document.getElementById('clientName').value.trim().replace(/[^a-zA-Z0-9-_]/g, ' ');
-                    
-                    // Set the new title with quote number and client name
-                    document.title = `Quote_${quoteNumber}_${clientName || 'Client'}`;
-                });
+                // Generate quote number
+                generateQuoteNumber();
                 
-                window.addEventListener('afterprint', function() {
-                    // Restore the original title
-                    document.title = originalTitle;
-                    
-                    // Clean up the event listeners
-                    window.removeEventListener('beforeprint', arguments.callee);
-                    window.removeEventListener('afterprint', arguments.callee);
-                });
-    
-                // Print the document
-                window.print();
-            });
-            
-            // Reset form
-            document.getElementById('resetBtn').addEventListener('click', function() {
-                if (confirm('Are you sure you want to reset the form? All entered data will be lost.')) {
-                    document.getElementById('clientName').value = '';
-                    document.getElementById('clientAddress').value = '';
-                    document.getElementById('clientEmail').value = '';
-                    document.getElementById('clientPhone').value = '';
-                    document.getElementById('clientGST').value = '';
-                    document.getElementById('salutation').value = 'Dear Sir/Madam,';
-                    document.getElementById('paymentTerms').value = '50% advance payment and 50% before delivery. Payment to be made via bank transfer or cheque in favor of OM SAKTHI WOOD WORKS.';
-                    document.getElementById('notes').value = 'Prices are inclusive of GST 12%. Delivery within 15 days from the date of order confirmation. Warranty as per product specifications.';
-                    
+                // Update quote number when date changes
+                document.getElementById('quoteDate').addEventListener('change', generateQuoteNumber);
+                
+                // Add product row
+                document.getElementById('addProductBtn').addEventListener('click', function() {
                     const tbody = document.querySelector('#productsTable tbody');
-                    while (tbody.rows.length > 1) {
-                        tbody.deleteRow(1);
-                    }
+                    const rowCount = tbody.rows.length + 1;
+                    const newRow = document.createElement('tr');
+                    newRow.innerHTML = `
+                        <td>${rowCount}</td>
+                        <td><input type="text" class="product-desc" placeholder="Product description"></td>
+                        <td><input type="number" class="product-qty" min="1" value="1"></td>
+                        <td><input type="number" class="product-price" min="0" step="0.01" placeholder="0.00"></td>
+                        <td class="product-total">0.00</td>
+                        <td><button type="button" class="delete-product-btn"><i class="fas fa-trash"></i></button></td>
+                    `;
+                    tbody.appendChild(newRow);
                     
-                    // Reset the first row
-                    const firstRow = tbody.rows[0];
-                    firstRow.querySelector('.product-desc').value = '';
-                    firstRow.querySelector('.product-qty').value = 1;
-                    firstRow.querySelector('.product-price').value = '';
-                    firstRow.querySelector('.product-total').textContent = '0.00';
-                    firstRow.cells[0].textContent = '1';
-                    
-                    // Set today's date and generate new quote number
-                    document.getElementById('quoteDate').value = today;
-                    generateQuoteNumber();
-                }
-            });
-            
-            // Helper function to generate quote number
-            function generateQuoteNumber() {
-                const dateInput = document.getElementById('quoteDate').value;
-                if (!dateInput) return;
-                
-                const date = new Date(dateInput);
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                
-                // Generate a random 3-digit number for uniqueness
-                const randomNum = Math.floor(Math.random() * 900) + 100;
-                
-                const quoteNumber = `OSWW/Q/${year}${month}${day}-${randomNum}`;
-                document.getElementById('quoteNumber').value = quoteNumber;
-            }
-            
-            // Helper function to add event listeners to product row inputs
-            function addProductRowEventListeners(row) {
-                const qtyInput = row.querySelector('.product-qty');
-                const priceInput = row.querySelector('.product-price');
-                
-                qtyInput.addEventListener('input', calculateRowTotal);
-                priceInput.addEventListener('input', calculateRowTotal);
-                
-                function calculateRowTotal() {
-                    const qty = parseFloat(qtyInput.value) || 0;
-                    const price = parseFloat(priceInput.value) || 0;
-                    const total = qty * price;
-                    row.querySelector('.product-total').textContent = total.toFixed(2);
-                    calculateTotals();
-                }
-            }
-            
-            // Calculate all row totals and grand total
-            function calculateTotals() {
-                let subtotal = 0;
-                document.querySelectorAll('#productsTable tbody tr').forEach(row => {
-                    const total = parseFloat(row.querySelector('.product-total').textContent) || 0;
-                    subtotal += total;
+                    // Add event listeners to new inputs
+                    addProductRowEventListeners(newRow);
                 });
                 
-                const gst = subtotal * 0.12;
-                const grandTotal = subtotal + gst;
+                // Add event listeners to initial product row
+                const initialRow = document.querySelector('#productsTable tbody tr');
+                addProductRowEventListeners(initialRow);
                 
-                // Update preview totals if preview is visible
-                if (!document.getElementById('quotePreview').classList.contains('hidden')) {
+                // Delete product row
+                document.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('delete-product-btn') || e.target.closest('.delete-product-btn')) {
+                        const row = e.target.closest('tr');
+                        if (document.querySelectorAll('#productsTable tbody tr').length > 1) {
+                            row.remove();
+                            updateSerialNumbers();
+                            calculateTotals();
+                        } else {
+                            alert('You must have at least one product in the quote.');
+                        }
+                    }
+                });
+                
+                // Update serial numbers after row deletion
+                function updateSerialNumbers() {
+                    const rows = document.querySelectorAll('#productsTable tbody tr');
+                    rows.forEach((row, index) => {
+                        row.cells[0].textContent = index + 1;
+                    });
+                }
+                
+                // Preview quote
+                document.getElementById('previewBtn').addEventListener('click', function() {
+                    if (validateForm()) {
+                        updatePreview();
+                        document.querySelector('.no-print').classList.add('hidden');
+                        document.getElementById('quotePreview').classList.remove('hidden');
+                    }
+                });
+                
+                // Back to edit
+                document.getElementById('backBtn').addEventListener('click', function() {
+                    document.querySelector('.no-print').classList.remove('hidden');
+                    document.getElementById('quotePreview').classList.add('hidden');
+                });
+                
+                // Print quote
+                document.getElementById('printBtn').addEventListener('click', function() {
+                    // Store the original title
+                    const originalTitle = document.title;
+                    
+                    // Set up event listeners for before and after print
+                    window.addEventListener('beforeprint', function() {
+                        // Get the quote number and client name
+                        const quoteNumber = document.getElementById('quoteNumber').value.replace(/\//g, '-');
+                        const clientName = document.getElementById('clientName').value.trim().replace(/[^a-zA-Z0-9-_]/g, ' ');
+                        
+                        // Set the new title with quote number and client name
+                        document.title = `Quote_${quoteNumber}_${clientName || 'Client'}`;
+                    });
+                    
+                    window.addEventListener('afterprint', function() {
+                        // Restore the original title
+                        document.title = originalTitle;
+                        
+                        // Clean up the event listeners
+                        window.removeEventListener('beforeprint', arguments.callee);
+                        window.removeEventListener('afterprint', arguments.callee);
+                    });
+        
+                    // Print the document
+                    window.print();
+                });
+                
+                // Reset form
+                document.getElementById('resetBtn').addEventListener('click', function() {
+                    if (confirm('Are you sure you want to reset the form? All entered data will be lost.')) {
+                        document.getElementById('clientName').value = '';
+                        document.getElementById('clientAddress').value = '';
+                        document.getElementById('clientEmail').value = '';
+                        document.getElementById('clientPhone').value = '';
+                        document.getElementById('clientGST').value = '';
+                        document.getElementById('salutation').value = 'Dear Sir/Madam,';
+                        document.getElementById('paymentTerms').value = '50% advance payment and 50% before delivery. Payment to be made via bank transfer or cheque in favor of OM SAKTHI WOOD WORKS.';
+                        document.getElementById('notes').value = 'Prices are inclusive of GST 12%. Delivery within 15 days from the date of order confirmation. Warranty as per product specifications.';
+                        
+                        const tbody = document.querySelector('#productsTable tbody');
+                        while (tbody.rows.length > 1) {
+                            tbody.deleteRow(1);
+                        }
+                        
+                        // Reset the first row
+                        const firstRow = tbody.rows[0];
+                        firstRow.querySelector('.product-desc').value = '';
+                        firstRow.querySelector('.product-qty').value = 1;
+                        firstRow.querySelector('.product-price').value = '';
+                        firstRow.querySelector('.product-total').textContent = '0.00';
+                        firstRow.cells[0].textContent = '1';
+                        
+                        // Set today's date and generate new quote number
+                        document.getElementById('quoteDate').value = today;
+                        generateQuoteNumber();
+                    }
+                });
+                
+                // Helper function to generate quote number
+                function generateQuoteNumber() {
+                    const dateInput = document.getElementById('quoteDate').value;
+                    if (!dateInput) return;
+                    
+                    const date = new Date(dateInput);
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    
+                    // Generate a random 3-digit number for uniqueness
+                    const randomNum = Math.floor(Math.random() * 900) + 100;
+                    
+                    const quoteNumber = `OSWW/Q/${year}${month}${day}-${randomNum}`;
+                    document.getElementById('quoteNumber').value = quoteNumber;
+                }
+                
+                // Helper function to add event listeners to product row inputs
+                function addProductRowEventListeners(row) {
+                    const qtyInput = row.querySelector('.product-qty');
+                    const priceInput = row.querySelector('.product-price');
+                    
+                    qtyInput.addEventListener('input', calculateRowTotal);
+                    priceInput.addEventListener('input', calculateRowTotal);
+                    
+                    function calculateRowTotal() {
+                        const qty = parseFloat(qtyInput.value) || 0;
+                        const price = parseFloat(priceInput.value) || 0;
+                        const total = qty * price;
+                        row.querySelector('.product-total').textContent = total.toFixed(2);
+                        calculateTotals();
+                    }
+                }
+                
+                // Calculate all row totals and grand total
+                function calculateTotals() {
+                    let subtotal = 0;
+                    document.querySelectorAll('#productsTable tbody tr').forEach(row => {
+                        const total = parseFloat(row.querySelector('.product-total').textContent) || 0;
+                        subtotal += total;
+                    });
+                    
+                    const gst = subtotal * 0.12;
+                    const grandTotal = subtotal + gst;
+                    
+                    // Update preview totals if preview is visible
+                    if (!document.getElementById('quotePreview').classList.contains('hidden')) {
+                        document.getElementById('previewSubtotal').textContent = subtotal.toFixed(2);
+                        document.getElementById('previewGST').textContent = gst.toFixed(2);
+                        document.getElementById('previewGrandTotal').textContent = grandTotal.toFixed(2);
+                    }
+                }
+                
+                // Validate form before preview
+                function validateForm() {
+                    const clientName = document.getElementById('clientName').value.trim();
+                    if (!clientName) {
+                        alert('Please enter client name');
+                        return false;
+                    }
+                    
+                    const salutation = document.getElementById('salutation').value;
+                    if (!salutation) {
+                        alert('Please enter salutation');
+                        return false;
+                    }
+                    
+                    let hasProducts = false;
+                    document.querySelectorAll('#productsTable tbody tr').forEach(row => {
+                        const desc = row.querySelector('.product-desc').value.trim();
+                        const price = row.querySelector('.product-price').value.trim();
+                        if (desc && price) {
+                            hasProducts = true;
+                        }
+                    });
+                    
+                    if (!hasProducts) {
+                        alert('Please add at least one product with description and price');
+                        return false;
+                    }
+                    
+                    return true;
+                }
+                
+                // Update preview with form data
+                function updatePreview() {
+                    // Client details
+                    document.getElementById('previewQuoteNumber').textContent = document.getElementById('quoteNumber').value;
+                    
+                    const quoteDate = document.getElementById('quoteDate').value;
+                    const formattedDate = new Date(quoteDate).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                    });
+                    document.getElementById('previewQuoteDate').textContent = formattedDate;
+                    
+                    document.getElementById('previewClientName').textContent = document.getElementById('clientName').value;
+                    document.getElementById('previewClientAddress').innerHTML = document.getElementById('clientAddress').value.replace(/\n/g, '<br>');
+                    document.getElementById('previewClientEmail').textContent = document.getElementById('clientEmail').value;
+                    document.getElementById('previewClientPhone').textContent = document.getElementById('clientPhone').value;
+                    
+                    const clientGST = document.getElementById('clientGST').value;
+                    document.getElementById('previewClientGST').textContent = clientGST ? `GST: ${clientGST}` : '';
+                    
+                    // Salutation
+                    document.getElementById('previewSalutation').textContent = document.getElementById('salutation').value;
+                    
+                    // Products
+                    const previewTable = document.getElementById('previewProductsTable');
+                    previewTable.innerHTML = '';
+                    
+                    let subtotal = 0;
+                    document.querySelectorAll('#productsTable tbody tr').forEach((row, index) => {
+                        const desc = row.querySelector('.product-desc').value.trim();
+                        const qty = row.querySelector('.product-qty').value.trim();
+                        const price = parseFloat(row.querySelector('.product-price').value) || 0;
+                        const total = parseFloat(row.querySelector('.product-total').textContent) || 0;
+                        
+                        if (desc && price) {
+                            subtotal += total;
+                            
+                            const newRow = document.createElement('tr');
+                            newRow.innerHTML = `
+                                <td>${index + 1}</td>
+                                <td>${desc}</td>
+                                <td>${qty}</td>
+                                <td>${price.toFixed(2)}</td>
+                                <td>${total.toFixed(2)}</td>
+                            `;
+                            previewTable.appendChild(newRow);
+                        }
+                    });
+                    
+                    const gst = subtotal * 0.12;
+                    const grandTotal = subtotal + gst;
+                    
                     document.getElementById('previewSubtotal').textContent = subtotal.toFixed(2);
                     document.getElementById('previewGST').textContent = gst.toFixed(2);
                     document.getElementById('previewGrandTotal').textContent = grandTotal.toFixed(2);
-                }
-            }
-            
-            // Validate form before preview
-            function validateForm() {
-                const clientName = document.getElementById('clientName').value.trim();
-                if (!clientName) {
-                    alert('Please enter client name');
-                    return false;
-                }
-                
-                const salutation = document.getElementById('salutation').value;
-                if (!salutation) {
-                    alert('Please enter salutation');
-                    return false;
-                }
-                
-                let hasProducts = false;
-                document.querySelectorAll('#productsTable tbody tr').forEach(row => {
-                    const desc = row.querySelector('.product-desc').value.trim();
-                    const price = row.querySelector('.product-price').value.trim();
-                    if (desc && price) {
-                        hasProducts = true;
-                    }
-                });
-                
-                if (!hasProducts) {
-                    alert('Please add at least one product with description and price');
-                    return false;
-                }
-                
-                return true;
-            }
-            
-            // Update preview with form data
-            function updatePreview() {
-                // Client details
-                document.getElementById('previewQuoteNumber').textContent = document.getElementById('quoteNumber').value;
-                
-                const quoteDate = document.getElementById('quoteDate').value;
-                const formattedDate = new Date(quoteDate).toLocaleDateString('en-IN', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric'
-                });
-                document.getElementById('previewQuoteDate').textContent = formattedDate;
-                
-                document.getElementById('previewClientName').textContent = document.getElementById('clientName').value;
-                document.getElementById('previewClientAddress').innerHTML = document.getElementById('clientAddress').value.replace(/\n/g, '<br>');
-                document.getElementById('previewClientEmail').textContent = document.getElementById('clientEmail').value;
-                document.getElementById('previewClientPhone').textContent = document.getElementById('clientPhone').value;
-                
-                const clientGST = document.getElementById('clientGST').value;
-                document.getElementById('previewClientGST').textContent = clientGST ? `GST: ${clientGST}` : '';
-                
-                // Salutation
-                document.getElementById('previewSalutation').textContent = document.getElementById('salutation').value;
-                
-                // Products
-                const previewTable = document.getElementById('previewProductsTable');
-                previewTable.innerHTML = '';
-                
-                let subtotal = 0;
-                document.querySelectorAll('#productsTable tbody tr').forEach((row, index) => {
-                    const desc = row.querySelector('.product-desc').value.trim();
-                    const qty = row.querySelector('.product-qty').value.trim();
-                    const price = parseFloat(row.querySelector('.product-price').value) || 0;
-                    const total = parseFloat(row.querySelector('.product-total').textContent) || 0;
                     
-                    if (desc && price) {
-                        subtotal += total;
-                        
-                        const newRow = document.createElement('tr');
-                        newRow.innerHTML = `
-                            <td>${index + 1}</td>
-                            <td>${desc}</td>
-                            <td>${qty}</td>
-                            <td>${price.toFixed(2)}</td>
-                            <td>${total.toFixed(2)}</td>
-                        `;
-                        previewTable.appendChild(newRow);
-                    }
-                });
-                
-                const gst = subtotal * 0.12;
-                const grandTotal = subtotal + gst;
-                
-                document.getElementById('previewSubtotal').textContent = subtotal.toFixed(2);
-                document.getElementById('previewGST').textContent = gst.toFixed(2);
-                document.getElementById('previewGrandTotal').textContent = grandTotal.toFixed(2);
-                
-                // Payment terms and notes
-                document.getElementById('previewPaymentTerms').innerHTML = 
-                    '<ul>' + 
-                    Array.from(document.querySelectorAll('#paymentTerms li:not(.add-bullet)'))
-                        .map(li => '<li>' + li.textContent + '</li>')
-                        .join('') + 
-                    '</ul>';
+                    // Payment terms and notes
+                    document.getElementById('previewPaymentTerms').innerHTML = 
+                        '<ul>' + 
+                        Array.from(document.querySelectorAll('#paymentTerms li:not(.add-bullet)'))
+                            .map(li => '<li>' + li.textContent + '</li>')
+                            .join('') + 
+                        '</ul>';
 
-                document.getElementById('previewNotes').innerHTML = 
-                    '<ul>' + 
-                    Array.from(document.querySelectorAll('#notes li:not(.add-bullet)'))
-                        .map(li => '<li>' + li.textContent + '</li>')
-                        .join('') + 
-                    '</ul>';
-            
+                    document.getElementById('previewNotes').innerHTML = 
+                        '<ul>' + 
+                        Array.from(document.querySelectorAll('#notes li:not(.add-bullet)'))
+                            .map(li => '<li>' + li.textContent + '</li>')
+                            .join('') + 
+                        '</ul>';
+                }
             }
         });
 
@@ -932,7 +1042,6 @@
             element.parentNode.insertBefore(newItem, element);
             newItem.focus();
         }
-
     </script>
 </body>
 </html>
