@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plywood Calculator</title>
+    <title>Multi-Box Plywood Calculator</title>
     <style>
         :root {
             --primary-color: #3498db;
@@ -203,6 +203,68 @@
             font-weight: 600;
         }
         
+        .box-inputs {
+            margin-bottom: 15px;
+        }
+        
+        .box-input-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .box-input-row input {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .add-box-btn, .remove-box-btn {
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            border: none;
+        }
+        
+        .add-box-btn {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .remove-box-btn {
+            background-color: var(--warning-color);
+            color: white;
+        }
+        
+        .box-tag {
+            display: inline-flex;
+            align-items: center;
+            background-color: #e0e0e0;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        
+        .remove-box {
+            margin-left: 8px;
+            cursor: pointer;
+            color: var(--warning-color);
+        }
+        
+        .combined-header {
+            grid-column: 1 / -1;
+            margin-top: 20px;
+            margin-bottom: 5px;
+            color: var(--secondary-color);
+        }
+        
+        .combined-option {
+            background-color: #e8f4fc;
+            border-left: 4px solid var(--secondary-color);
+        }
+        
         @media (min-width: 600px) {
             .plywood-options {
                 grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -225,7 +287,7 @@
     </style>
 </head>
 <body>
-    <h1>Plywood Calculator</h1>
+    <h1>Multi-Box Plywood Calculator (5-Sided)</h1>
     
     <div class="calculator">
         <div class="toggle-group">
@@ -249,19 +311,20 @@
             </div>
         </div>
         
-        <div class="input-group">
-            <label for="length">Internal Length</label>
-            <input type="number" id="length" step="0.01" placeholder="Enter internal length">
-        </div>
-        
-        <div class="input-group">
-            <label for="width">Internal Width</label>
-            <input type="number" id="width" step="0.01" placeholder="Enter internal width">
-        </div>
-        
-        <div class="input-group">
-            <label for="height">Internal Height</label>
-            <input type="number" id="height" step="0.01" placeholder="Enter internal height">
+        <div class="box-inputs">
+            <h3>Box Dimensions:</h3>
+            <div id="box-input-container">
+                <div class="box-input-row">
+                    <input type="number" class="box-length" placeholder="Length" step="0.01">
+                    <span>×</span>
+                    <input type="number" class="box-width" placeholder="Width" step="0.01">
+                    <span>×</span>
+                    <input type="number" class="box-height" placeholder="Height" step="0.01">
+                    <button class="remove-box-btn" onclick="removeBoxInput(this)">Remove</button>
+                </div>
+            </div>
+            <button class="add-box-btn" id="add-box-btn">Add Another Box</button>
+            <div id="box-tags-container"></div>
         </div>
         
         <button class="calculate" id="calculate-btn">Calculate Plywood Requirements</button>
@@ -274,7 +337,7 @@
             <div class="total-area" id="total-area"></div>
             
             <div class="surface-areas">
-                <h3>Surface Areas:</h3>
+                <h3>Surface Areas (5 sides):</h3>
                 <div id="surface-areas"></div>
             </div>
             
@@ -287,15 +350,15 @@
         document.addEventListener('DOMContentLoaded', function() {
             const unitButtons = document.querySelectorAll('.unit-toggle button');
             const thicknessButtons = document.querySelectorAll('.thickness-toggle button');
-            const lengthInput = document.getElementById('length');
-            const widthInput = document.getElementById('width');
-            const heightInput = document.getElementById('height');
             const calculateBtn = document.getElementById('calculate-btn');
             const resultsDiv = document.getElementById('results');
             const adjustedDimensionsDiv = document.getElementById('adjusted-dimensions');
             const totalAreaDiv = document.getElementById('total-area');
             const surfaceAreasDiv = document.getElementById('surface-areas');
             const plywoodOptionsDiv = document.getElementById('plywood-options');
+            const addBoxBtn = document.getElementById('add-box-btn');
+            const boxInputContainer = document.getElementById('box-input-container');
+            const boxTagsContainer = document.getElementById('box-tags-container');
             
             let currentUnit = 'cm'; // Default to centimeters
             let currentThickness = 8; // Default to 8mm
@@ -328,68 +391,147 @@
                 });
             });
             
+            // Add box input row
+            addBoxBtn.addEventListener('click', function() {
+                const newRow = document.createElement('div');
+                newRow.className = 'box-input-row';
+                newRow.innerHTML = `
+                    <input type="number" class="box-length" placeholder="Length" step="0.01">
+                    <span>×</span>
+                    <input type="number" class="box-width" placeholder="Width" step="0.01">
+                    <span>×</span>
+                    <input type="number" class="box-height" placeholder="Height" step="0.01">
+                    <button class="remove-box-btn" onclick="removeBoxInput(this)">Remove</button>
+                `;
+                boxInputContainer.appendChild(newRow);
+            });
+            
+            // Remove box input row
+            window.removeBoxInput = function(button) {
+                if (boxInputContainer.children.length > 1) {
+                    button.parentElement.remove();
+                } else {
+                    alert("You need at least one box input");
+                }
+            };
+            
+            // Get all box dimensions
+            function getBoxDimensions() {
+                const boxes = [];
+                const rows = boxInputContainer.querySelectorAll('.box-input-row');
+                
+                rows.forEach(row => {
+                    const length = parseFloat(row.querySelector('.box-length').value);
+                    const width = parseFloat(row.querySelector('.box-width').value);
+                    const height = parseFloat(row.querySelector('.box-height').value);
+                    
+                    if (!isNaN(length) && !isNaN(width) && !isNaN(height) && 
+                        length > 0 && width > 0 && height > 0) {
+                        boxes.push({ length, width, height });
+                    }
+                });
+                
+                return boxes;
+            }
+            
+            // Update box tags display
+            function updateBoxTags(boxes) {
+                boxTagsContainer.innerHTML = '';
+                boxes.forEach((box, index) => {
+                    const tag = document.createElement('span');
+                    tag.className = 'box-tag';
+                    tag.textContent = `Box ${index + 1}: ${box.length} × ${box.width} × ${box.height} ${currentUnit}`;
+                    boxTagsContainer.appendChild(tag);
+                });
+            }
+            
             // Calculate button functionality
             calculateBtn.addEventListener('click', function() {
-                const length = parseFloat(lengthInput.value);
-                const width = parseFloat(widthInput.value);
-                const height = parseFloat(heightInput.value);
+                const boxes = getBoxDimensions();
                 
-                if (isNaN(length) || isNaN(width) || isNaN(height) || length <= 0 || width <= 0 || height <= 0) {
-                    alert('Please enter valid positive numbers for all dimensions');
+                if (boxes.length === 0) {
+                    alert('Please enter valid dimensions for at least one box');
                     return;
                 }
                 
-                // Convert all dimensions to feet
-                let lengthFt, widthFt, heightFt;
+                updateBoxTags(boxes);
                 
-                switch(currentUnit) {
-                    case 'inch':
-                        lengthFt = length / 12;
-                        widthFt = width / 12;
-                        heightFt = height / 12;
-                        break;
-                    case 'cm':
-                        lengthFt = length / 30.48;
-                        widthFt = width / 30.48;
-                        heightFt = height / 30.48;
-                        break;
-                    default: // feet
-                        lengthFt = length;
-                        widthFt = width;
-                        heightFt = height;
-                }
+                // Convert all dimensions to feet and calculate total area
+                let totalArea = 0;
+                const adjustedBoxes = [];
                 
-                // Convert thickness from mm to feet
-                const thicknessFt = currentThickness / 304.8;
-                const clearanceFt = 2 / 12; // 2 inches clearance
-                
-                // Adjust only length (width and height remain unchanged)
-                const adjustedLength = lengthFt + 2 * (clearanceFt + thicknessFt);
-                const adjustedWidth = widthFt;
-                const adjustedHeight = heightFt;
+                boxes.forEach(box => {
+                    let lengthFt, widthFt, heightFt;
+                    
+                    switch(currentUnit) {
+                        case 'inch':
+                            lengthFt = box.length / 12;
+                            widthFt = box.width / 12;
+                            heightFt = box.height / 12;
+                            break;
+                        case 'cm':
+                            lengthFt = box.length / 30.48;
+                            widthFt = box.width / 30.48;
+                            heightFt = box.height / 30.48;
+                            break;
+                        default: // feet
+                            lengthFt = box.length;
+                            widthFt = box.width;
+                            heightFt = box.height;
+                    }
+                    
+                    // Convert thickness from mm to feet
+                    const thicknessFt = currentThickness / 304.8;
+                    const clearanceFt = 2 / 12; // 2 inches clearance
+                    
+                    // Adjust only length (width and height remain unchanged)
+                    const adjustedLength = lengthFt + 2 * (clearanceFt + thicknessFt);
+                    const adjustedWidth = widthFt;
+                    const adjustedHeight = heightFt;
+                    
+                    adjustedBoxes.push({
+                        original: box,
+                        adjusted: {
+                            length: adjustedLength,
+                            width: adjustedWidth,
+                            height: adjustedHeight
+                        }
+                    });
+                    
+                    // Calculate surface areas (5 sides - excluding bottom)
+                    const frontArea = adjustedLength * adjustedHeight;
+                    const backArea = adjustedLength * adjustedHeight;
+                    const leftArea = adjustedWidth * adjustedHeight;
+                    const rightArea = adjustedWidth * adjustedHeight;
+                    const topArea = adjustedLength * adjustedWidth;
+                    
+                    totalArea += frontArea + backArea + leftArea + rightArea + topArea;
+                });
                 
                 // Display adjusted dimensions
                 adjustedDimensionsDiv.innerHTML = `
-                    <p><strong>Adjusted Dimensions:</strong></p>
-                    <p>Length: ${adjustedLength.toFixed(3)} ft (${(adjustedLength * 12).toFixed(2)} in / ${(adjustedLength * 30.48).toFixed(1)} cm)</p>
-                    <p>Width: ${adjustedWidth.toFixed(3)} ft (${(adjustedWidth * 12).toFixed(2)} in / ${(adjustedWidth * 30.48).toFixed(1)} cm)</p>
-                    <p>Height: ${adjustedHeight.toFixed(3)} ft (${(adjustedHeight * 12).toFixed(2)} in / ${(adjustedHeight * 30.48).toFixed(1)} cm)</p>
+                    <p><strong>Adjusted Dimensions (all in feet):</strong></p>
+                    ${adjustedBoxes.map((box, index) => `
+                        <p>Box ${index + 1}: 
+                        Length: ${box.adjusted.length.toFixed(3)} ft, 
+                        Width: ${box.adjusted.width.toFixed(3)} ft, 
+                        Height: ${box.adjusted.height.toFixed(3)} ft</p>
+                    `).join('')}
                     <p><em>Note: Only length adjusted (2" clearance + 2× ${currentThickness}mm thickness)</em></p>
                 `;
                 
-                // Calculate surface areas
-                const frontBackArea = 2 * (adjustedLength * adjustedHeight);
-                const leftRightArea = 2 * (adjustedWidth * adjustedHeight);
-                const topBottomArea = 2 * (adjustedLength * adjustedWidth);
-                const totalArea = frontBackArea + leftRightArea + topBottomArea;
-                
                 // Display results
-                totalAreaDiv.textContent = `Total Surface Area: ${totalArea.toFixed(2)} sq.ft`;
+                totalAreaDiv.textContent = `Total Surface Area (all boxes, 5 sides each): ${totalArea.toFixed(2)} sq.ft`;
                 
                 surfaceAreasDiv.innerHTML = `
-                    <p>Front/Back: ${frontBackArea.toFixed(2)} sq.ft (each ${(adjustedLength * adjustedHeight).toFixed(2)} sq.ft)</p>
-                    <p>Left/Right: ${leftRightArea.toFixed(2)} sq.ft (each ${(adjustedWidth * adjustedHeight).toFixed(2)} sq.ft)</p>
-                    <p>Top/Bottom: ${topBottomArea.toFixed(2)} sq.ft (each ${(adjustedLength * adjustedWidth).toFixed(2)} sq.ft)</p>
+                    <p>Total area for all boxes: ${totalArea.toFixed(2)} sq.ft</p>
+                    ${adjustedBoxes.map((box, index) => `
+                        <p>Box ${index + 1}: ${(
+                            (box.adjusted.length * box.adjusted.height * 2) + // front/back
+                            (box.adjusted.width * box.adjusted.height * 2) + // left/right
+                            (box.adjusted.length * box.adjusted.width) // top
+                        ).toFixed(2)} sq.ft</p>
+                    `).join('')}
                 `;
                 
                 // Calculate plywood options with wastage
@@ -408,12 +550,44 @@
                     };
                 });
                 
-                // Sort by least wastage
+                // Generate combined options (pairs of different sizes)
+                const combinedOptions = [];
+                for (let i = 0; i < plywoodSizes.length; i++) {
+                    for (let j = i + 1; j < plywoodSizes.length; j++) {
+                        const size1 = plywoodSizes[i];
+                        const size2 = plywoodSizes[j];
+                        
+                        // Try different combinations of the two sizes
+                        for (let sheets1 = 1; sheets1 <= Math.ceil(totalArea / size1.area) + 1; sheets1++) {
+                            const remainingArea = totalArea - (sheets1 * size1.area);
+                            if (remainingArea <= 0) continue;
+                            
+                            const sheets2 = Math.ceil(remainingArea / size2.area);
+                            const totalCovered = (sheets1 * size1.area) + (sheets2 * size2.area);
+                            const wastage = totalCovered - totalArea;
+                            const wastagePercentage = (wastage / totalCovered) * 100;
+                            
+                            combinedOptions.push({
+                                name: `${size1.name} + ${size2.name}`,
+                                sizes: [size1, size2],
+                                sheets: [sheets1, sheets2],
+                                totalSheets: sheets1 + sheets2,
+                                totalCovered,
+                                wastage,
+                                wastagePercentage
+                            });
+                        }
+                    }
+                }
+                
+                // Sort all options by least wastage
                 plywoodOptions.sort((a, b) => a.wastage - b.wastage);
+                combinedOptions.sort((a, b) => a.wastage - b.wastage);
                 
                 // Display plywood options
                 plywoodOptionsDiv.innerHTML = '';
                 
+                // Show single size options
                 plywoodOptions.forEach(option => {
                     const optionDiv = document.createElement('div');
                     optionDiv.className = 'option';
@@ -425,9 +599,32 @@
                         <p class="wastage">Wastage: ${option.wastage.toFixed(2)} sq.ft (${option.wastagePercentage.toFixed(1)}%)</p>
                         <div class="total-sheets">Efficiency: ${((totalArea / option.totalCovered) * 100).toFixed(1)}%</div>
                     `;
-                    
                     plywoodOptionsDiv.appendChild(optionDiv);
                 });
+                
+                // Show combined options (top 3)
+                const topCombined = combinedOptions.slice(0, 3);
+                if (topCombined.length > 0) {
+                    const combinedHeader = document.createElement('h3');
+                    combinedHeader.className = 'combined-header';
+                    combinedHeader.textContent = 'Best Combined Options:';
+                    plywoodOptionsDiv.appendChild(combinedHeader);
+                    
+                    topCombined.forEach(option => {
+                        const optionDiv = document.createElement('div');
+                        optionDiv.className = 'option combined-option';
+                        optionDiv.innerHTML = `
+                            <h3>${option.name}</h3>
+                            <p>${option.sheets[0]} × ${option.sizes[0].name} (${option.sizes[0].area} sq.ft each)</p>
+                            <p>${option.sheets[1]} × ${option.sizes[1].name} (${option.sizes[1].area} sq.ft each)</p>
+                            <p>Total sheets: ${option.totalSheets}</p>
+                            <p>Total area covered: ${option.totalCovered.toFixed(2)} sq.ft</p>
+                            <p class="wastage">Wastage: ${option.wastage.toFixed(2)} sq.ft (${option.wastagePercentage.toFixed(1)}%)</p>
+                            <div class="total-sheets">Efficiency: ${((totalArea / option.totalCovered) * 100).toFixed(1)}%</div>
+                        `;
+                        plywoodOptionsDiv.appendChild(optionDiv);
+                    });
+                }
                 
                 // Show results with animation
                 resultsDiv.classList.add('visible');
