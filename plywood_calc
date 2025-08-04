@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Plywood Box Sheet Optimizer</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f4f8fb; margin: 0; padding: 0;}
+  .container { max-width: 520px; margin: 30px auto 40px auto; background: #fff; border-radius: 14px; box-shadow: 0 2px 18px #0002; padding: 30px 22px 36px 22px;}
+  h1 { font-size: 1.6em; text-align: center; color: #2563eb; margin: 0 0 24px 0;}
+  label { display: block; margin: 18px 0 8px 4px; font-size: 1.1em; color: #222;}
+  input, select, button { width: 100%; padding: 10px 14px; margin-bottom: 12px; font-size: 1.12em; border-radius: 9px; border: 1px solid #aaa; background: #f8fafc; box-sizing: border-box; transition: border-color 0.2s, box-shadow 0.2s;}
+  input:focus, select:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 8px #9dbffc88;}
+  button { background: #2563eb; color: #fff; font-weight: 700; border: none; cursor: pointer; transition: background 0.3s;}
+  button:hover { background: #1553c4;}
+  .sheets-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;}
+  .sheet-box { background: #f6f9ff; border: 1.5px solid #60a5fa; border-radius: 8px; flex: 1 1 140px; padding: 9px 14px; display: flex; align-items: center; gap: 10px;}
+  .sheet-box input { width: auto; margin: 0; vertical-align: middle; cursor: pointer;}
+  .sheet-box label { cursor: pointer; user-select: none;}
+  .summary, .assignment { margin-top: 20px; padding: 18px 14px 12px 14px; border-radius: 10px; background: #e7f2fd;}
+  .assignment canvas { width: 100%; height: 140px; margin-top: 12px; background: white; border-radius: 7px; border: 1px solid #bcd;}
+  .error { background: #fdd; color: #b00; padding: 12px 16px; margin-top: 10px; border-radius: 8px; font-weight: 600; text-align: center;}
+  @media (max-width: 600px) { .container { margin: 20px auto 30px auto; padding: 18px 14px 22px 14px; max-width: 95vw; } .sheets-row { gap: 6px;} input, select, button { font-size: 1em; } }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Plywood Box Sheet Optimizer</h1>
+    <form id="plyForm" autocomplete="off" novalidate>
+      <label for="length">Box Length</label>
+      <input type="number" step="0.01" id="length" name="length" min="0" required aria-required="true" />
+      <label for="width">Box Width</label>
+      <input type="number" step="0.01" id="width" name="width" min="0" required aria-required="true" />
+      <label for="height">Box Height</label>
+      <input type="number" step="0.01" id="height" name="height" min="0" required aria-required="true" />
+      <label for="thickness">Plywood Thickness (mm)</label>
+      <select id="thickness" name="thickness" required aria-required="true">
+        <option value="">Select thickness...</option>
+        <option value="6">6 mm</option>
+        <option value="8">8 mm</option>
+        <option value="12" selected>12 mm</option>
+        <option value="16">16 mm</option>
+        <option value="18">18 mm</option>
+      </select>
+      <label for="units">Units</label>
+      <select id="units" name="units" required aria-required="true">
+        <option value="cm" selected>Centimeter (cm)</option>
+        <option value="in">Inch (in)</option>
+      </select>
+      <label>Available Sheet Sizes (select one or more)</label>
+      <div class="sheets-row" id="sheetsRow">
+        <div class="sheet-box">
+          <input type="checkbox" class="sheet" id="sheet-244x122" name="sheets" value="244x122" checked />
+          <label for="sheet-244x122">8×4 ft (244×122 cm)</label>
+        </div>
+        <div class="sheet-box">
+          <input type="checkbox" class="sheet" id="sheet-244x91" name="sheets" value="244x91" />
+          <label for="sheet-244x91">8×3 ft (244×91 cm)</label>
+        </div>
+        <div class="sheet-box">
+          <input type="checkbox" class="sheet" id="sheet-213x122" name="sheets" value="213x122" />
+          <label for="sheet-213x122">7×4 ft (213×122 cm)</label>
+        </div>
+        <div class="sheet-box">
+          <input type="checkbox" class="sheet" id="sheet-213x91" name="sheets" value="213x91" />
+          <label for="sheet-213x91">7×3 ft (213×91 cm)</label>
+        </div>
+      </div>
+      <button type="submit">Calculate Best Sheets</button>
+    </form>
+    <div id="result" aria-live="polite"></div>
+  </div>
+
+  <script>
+  const SHEET_SIZES = {
+    "244x122": { w: 244, h: 122, label: "8×4 ft (244×122 cm)", sqft: 32 },
+    "244x91": { w: 244, h: 91, label: "8×3 ft (244×91 cm)", sqft: 24 },
+    "213x122": { w: 213, h: 122, label: "7×4 ft (213×122 cm)", sqft: 28 },
+    "213x91": { w: 213, h: 91, label: "7×3 ft (213×91 cm)", sqft: 21 }
+  };
+
+  function convertThickness(mm, unit) {
+    if (unit === "cm") return mm / 10;
+    if (unit === "in") return mm / 25.4;
+    return mm;
+  }
+
+  function cm2ToSqft(cm2) {
+    return cm2 / (30.48 * 30.48);
+  }
+
+  function adjustedFaces(length, width, height, thickness, unit) {
+    let t = convertThickness(thickness, unit);
+    return [
+      { label: "Top", w: length + 2 * t, h: width + 2 * t },
+      { label: "Front", w: length + 2 * t, h: height },
+      { label: "Back", w: length + 2 * t, h: height },
+      { label: "Left", w: width, h: height },
+      { label: "Right", w: width, h: height }
+    ];
+  }
+
+  function overlaps(r1, r2) {
+    return !(
+      r1.x + r1.w <= r2.x ||
+      r1.x >= r2.x + r2.w ||
+      r1.y + r1.h <= r2.y ||
+      r1.y >= r2.y + r2.h
+    );
+  }
+
+  // Simple bottom-left packing for a single sheet
+  function packFacesInSheet(faces, sheetW, sheetH) {
+    let usedRects = [],
+      placements = [];
+
+    for (let face of faces) {
+      let placed = false;
+      for (let [rotated, fw, fh] of [
+        [false, face.w, face.h],
+        [true, face.h, face.w]
+      ]) {
+        outer: for (let y = 0; y <= sheetH - fh; y++) {
+          for (let x = 0; x <= sheetW - fw; x++) {
+            let candidate = { x, y, w: fw, h: fh };
+            if (!usedRects.some((r) => overlaps(r, candidate))) {
+              placements.push({ ...face, x, y, w: fw, h: fh, rotated });
+              usedRects.push(candidate);
+              placed = true;
+              break outer;
+            }
+          }
+        }
+        if (placed) break;
+      }
+      if (!placed) return null;
+    }
+    return placements;
+  }
+
+  // For single sheet size selection: greedy packing allowing unlimited sheets
+  function packMultipleSheets(faces, sheetKey) {
+    const sheetW = SHEET_SIZES[sheetKey].w, sheetH = SHEET_SIZES[sheetKey].h;
+    let facesRemaining = faces.slice();
+    let sheets = [];
+    while (facesRemaining.length) {
+      // Try all combinations of faces to fill this sheet (brute force for up to 5 faces)
+      let maxPacked = null, maxPackedIdxs = [];
+      let n = facesRemaining.length;
+      for (let bits = 1; bits < (1 << n); bits++) {
+        let tryFaces = [];
+        let idxs = [];
+        for (let k = 0; k < n; ++k) {
+          if (bits & (1 << k)) {
+            tryFaces.push(facesRemaining[k]);
+            idxs.push(k);
+          }
+        }
+        let packed = packFacesInSheet(tryFaces, sheetW, sheetH);
+        if (packed && (!maxPacked || packed.length > maxPacked.length)) {
+          maxPacked = packed;
+          maxPackedIdxs = idxs;
+          if (packed.length === n) break; // can fit all, no need to try more
+        }
+      }
+      if (!maxPacked) return null; // can't even fit a single face, fail
+      sheets.push({ sheet: sheetKey, faces: maxPacked });
+      // Remove packed faces from facesRemaining
+      facesRemaining = facesRemaining.filter((f, i) => !maxPackedIdxs.includes(i));
+    }
+    return sheets;
+  }
+
+  // For multiple sheet sizes: recursive optimal search
+  function recursiveAssign(faces, sheetKeys, curAssign = []) {
+    if (faces.length === 0) {
+      let totalWaste = calcWaste(curAssign);
+      return { assignment: curAssign, waste: totalWaste };
+    }
+    let bestRes = null;
+    let face = faces[0];
+    for (let sheetKey of sheetKeys) {
+      let sheetW = SHEET_SIZES[sheetKey].w,
+        sheetH = SHEET_SIZES[sheetKey].h;
+      let assignedFacesEntry = curAssign.find((s) => s.sheet === sheetKey);
+      let combinedFaces = assignedFacesEntry ? assignedFacesEntry.faces.slice() : [];
+      combinedFaces.push(face);
+      let packed = packFacesInSheet(combinedFaces, sheetW, sheetH);
+      if (packed) {
+        let newAssign = curAssign.filter((s) => s.sheet !== sheetKey);
+        newAssign.push({ sheet: sheetKey, faces: packed });
+        let result = recursiveAssign(faces.slice(1), sheetKeys, newAssign);
+        if (!bestRes || result.waste < bestRes.waste) bestRes = result;
+      }
+    }
+    return bestRes;
+  }
+
+  function calcWaste(assignments) {
+    let totalFaceArea = 0, totalSheetArea = 0;
+    assignments.forEach(sheet => {
+      let s = SHEET_SIZES[sheet.sheet];
+      totalSheetArea += s.w * s.h;
+      sheet.faces.forEach(face => totalFaceArea += face.w * face.h);
+    });
+    return totalSheetArea - totalFaceArea;
+  }
+
+  function drawSheetSheet(assign, sheetKey, canvas) {
+    let ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const s = SHEET_SIZES[sheetKey];
+    const padding = 20;
+    const scale = Math.min((canvas.width - padding) / s.w, (canvas.height - padding) / s.h);
+    ctx.strokeStyle = "#2563eb";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(padding / 2, padding / 2, s.w * scale, s.h * scale);
+
+    for (let face of assign.faces) {
+      ctx.save();
+      ctx.globalAlpha = 0.85;
+      ctx.fillStyle = "#84a9ffcc";
+      ctx.strokeStyle = "#1e40af";
+      ctx.lineWidth = 1.6;
+
+      let x = padding / 2 + face.x * scale;
+      let y = padding / 2 + face.y * scale;
+      let w = face.w * scale;
+      let h = face.h * scale;
+
+      ctx.fillRect(x, y, w, h);
+      ctx.strokeRect(x, y, w, h);
+      ctx.fillStyle = "#1e3a8a";
+      ctx.font = "bold 14px Arial, sans-serif";
+      ctx.fillText(face.label, x + 6, y + 20);
+
+      ctx.fillStyle = "#1e3a8a";
+      ctx.font = "12px Arial, sans-serif";
+      ctx.fillText(`${face.w.toFixed(1)}×${face.h.toFixed(1)}`, x + 6, y + h - 8);
+      ctx.restore();
+    }
+  }
+
+  document.getElementById("plyForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const length = parseFloat(document.getElementById("length").value);
+    const width = parseFloat(document.getElementById("width").value);
+    const height = parseFloat(document.getElementById("height").value);
+    const thicknessVal = document.getElementById("thickness").value;
+    const thickness = parseFloat(thicknessVal);
+    const units = document.getElementById("units").value;
+    const sheetsChecked = Array.from(
+      document.querySelectorAll(".sheet:checked")
+    ).map((el) => el.value);
+
+    const resultDiv = document.getElementById("result");
+    resultDiv.innerHTML = "";
+
+    if (
+      isNaN(length) ||
+      length <= 0 ||
+      isNaN(width) ||
+      width <= 0 ||
+      isNaN(height) ||
+      height <= 0 ||
+      isNaN(thickness) ||
+      thickness <= 0 ||
+      thicknessVal.trim() === "" ||
+      sheetsChecked.length === 0
+    ) {
+      resultDiv.innerHTML = `<div class="error">Please fill all fields with valid positive values and select at least one sheet size.</div>`;
+      return;
+    }
+
+    const faces = adjustedFaces(length, width, height, thickness, units);
+    let assignments = null, waste = NaN;
+
+    if (sheetsChecked.length === 1) {
+      // Single sheet size mode: use as many sheets of that size as needed
+      assignments = packMultipleSheets(faces, sheetsChecked[0]);
+      if (!assignments) {
+        resultDiv.innerHTML = `<div class="error">No valid layout found. At least one piece doesn't fit selected sheet size.</div>`;
+        return;
+      }
+      waste = calcWaste(assignments);
+    } else {
+      // Multi-size: assign faces for optimal configuration (recursive search)
+      const optimal = recursiveAssign(faces, sheetsChecked, []);
+      if (!optimal) {
+        resultDiv.innerHTML = `<div class="error">No valid layout found. Try larger sheets or adjust box dimensions.</div>`;
+        return;
+      }
+      assignments = optimal.assignment;
+      waste = optimal.waste;
+    }
+
+    // Display results
+    const totalWasteSqft = cm2ToSqft(waste);
+    let html = '<div class="summary">';
+    html += `<b>Optimal Sheet Assignment</b><br>`;
+    html += `Total Sheets Used: <b>${assignments.length}</b><br>`;
+    html += `Total Wastage: <b>${totalWasteSqft.toFixed(2)} sq.ft</b>`;
+    html += "</div>";
+
+    assignments.forEach((sheetAssign, idx) => {
+      const sheetLbl = SHEET_SIZES[sheetAssign.sheet].label;
+      html += `<div class="assignment"><b>Sheet #${idx + 1}:</b> ${sheetLbl}<ul>`;
+      sheetAssign.faces.forEach((face) => {
+        const w = face.rotated ? face.h : face.w;
+        const h = face.rotated ? face.w : face.h;
+        html += `<li>${face.label}: ${w.toFixed(2)} × ${h.toFixed(2)} ${units}${face.rotated ? " (rotated)" : ""}</li>`;
+      });
+      html += "</ul><canvas id='canvas" + idx + "' width='480' height='160'></canvas></div>";
+    });
+    resultDiv.innerHTML = html;
+
+    setTimeout(() => {
+      assignments.forEach((sheetAssign, idx) => {
+        const canvas = document.getElementById("canvas" + idx);
+        if (canvas) drawSheetSheet(sheetAssign, sheetAssign.sheet, canvas);
+      });
+    }, 20);
+  });
+  </script>
+</body>
+</html>
