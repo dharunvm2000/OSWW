@@ -5,36 +5,177 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Plywood Box Sheet Optimizer</title>
 <style>
-  body { font-family: Arial, sans-serif; background: #f4f8fb; margin: 0; padding: 0;}
-  .container { max-width: 520px; margin: 30px auto 40px auto; background: #fff; border-radius: 14px; box-shadow: 0 2px 18px #0002; padding: 30px 22px 36px 22px;}
-  h1 { font-size: 1.6em; text-align: center; color: #2563eb; margin: 0 0 24px 0;}
-  label { display: block; margin: 18px 0 8px 4px; font-size: 1.1em; color: #222;}
-  input, select, button { width: 100%; padding: 10px 14px; margin-bottom: 12px; font-size: 1.12em; border-radius: 9px; border: 1px solid #aaa; background: #f8fafc; box-sizing: border-box; transition: border-color 0.2s, box-shadow 0.2s;}
-  input:focus, select:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 8px #9dbffc88;}
-  button { background: #2563eb; color: #fff; font-weight: 700; border: none; cursor: pointer; transition: background 0.3s;}
-  button:hover { background: #1553c4;}
-  .sheets-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;}
-  .sheet-box { background: #f6f9ff; border: 1.5px solid #60a5fa; border-radius: 8px; flex: 1 1 140px; padding: 9px 14px; display: flex; align-items: center; gap: 10px;}
-  .sheet-box input { width: auto; margin: 0; vertical-align: middle; cursor: pointer;}
-  .sheet-box label { cursor: pointer; user-select: none;}
-  .summary, .assignment { margin-top: 20px; padding: 18px 14px 12px 14px; border-radius: 10px; background: #e7f2fd;}
-  .assignment canvas { width: 100%; height: 140px; margin-top: 12px; background: white; border-radius: 7px; border: 1px solid #bcd;}
-  .error { background: #fdd; color: #b00; padding: 12px 16px; margin-top: 10px; border-radius: 8px; font-weight: 600; text-align: center;}
-  @media (max-width: 600px) { .container { margin: 20px auto 30px auto; padding: 18px 14px 22px 14px; max-width: 95vw; } .sheets-row { gap: 6px;} input, select, button { font-size: 1em; } }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+  body {
+    font-family: 'Inter', Arial, sans-serif;
+    background: linear-gradient(135deg, #d7e8ff 0%, #f8fafc 100%);
+    margin: 0; padding: 0;
+    min-height: 100vh;
+    display: flex; justify-content: center; align-items: center;
+  }
+  .container {
+    width: 100%;
+    max-width: 600px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 16px 38px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.08);
+    padding: 30px 28px 40px 28px;
+    box-sizing: border-box;
+  }
+  h1 {
+    font-weight: 700;
+    font-size: 1.9rem;
+    color: #2563eb;
+    margin-bottom: 28px;
+    text-align: center;
+  }
+  label {
+    display: block;
+    margin: 18px 0 8px 2px;
+    font-size: 1.15rem;
+    color: #1e293b;
+  }
+  input[type=number],
+  select {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 1.12rem;
+    border-radius: 10px;
+    border: 2px solid #cbd5e1;
+    background: #f8fafc;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    font-family: inherit;
+  }
+  input[type=number]:focus,
+  select:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 12px #bbe1ffcc;
+    background: #fff;
+  }
+  button {
+    width: 100%;
+    background: #2563eb;
+    color: white;
+    font-weight: 700;
+    font-size: 1.2rem;
+    padding: 14px 0;
+    border: none;
+    border-radius: 12px;
+    margin-top: 28px;
+    cursor: pointer;
+    box-shadow: 0 6px 15px #2563ebbb;
+    transition: background 0.3s ease;
+  }
+  button:hover {
+    background: #1e40af;
+  }
+  .sheets-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin: 12px 0 0 0;
+  }
+  .sheet-box {
+    background: #f0f9ff;
+    border: 2px solid #60a5fa;
+    border-radius: 12px;
+    padding: 10px 14px;
+    flex: 1 1 150px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.3s ease, border-color 0.3s ease;
+  }
+  .sheet-box input {
+    cursor: pointer;
+    width: auto;
+    margin: 0;
+  }
+  .sheet-box:hover {
+    background: #dbeafe;
+    border-color: #2563eb;
+  }
+  .summary, .assignment {
+    margin-top: 28px;
+    padding: 22px 18px 16px 18px;
+    border-radius: 12px;
+    background: #dbeafe;
+    color: #1e293b;
+    box-sizing: border-box;
+  }
+  .summary b, .assignment b {
+    font-weight: 700;
+  }
+  .assignment canvas {
+    width: 100%;
+    height: 140px;
+    margin-top: 16px;
+    border-radius: 12px;
+    border: 2px solid #a5b4fc;
+    background: white;
+  }
+  .error {
+    background: #fee2e2;
+    color: #b91c1c;
+    padding: 14px 18px;
+    margin-top: 24px;
+    border-radius: 12px;
+    font-weight: 700;
+    text-align: center;
+  }
+  ul {
+    padding-left: 20px;
+  }
+  ul li {
+    margin-bottom: 7px;
+    font-size: 1rem;
+  }
+  @media (max-width: 640px) {
+    .container {
+      padding: 24px 20px 32px 20px;
+      max-width: 100vw;
+      border-radius: 12px;
+      margin: 14px;
+    }
+    label {
+      font-size: 1.1rem;
+    }
+    input[type=number], select {
+      font-size: 1rem;
+      padding: 10px 14px;
+    }
+    button {
+      font-size: 1.1rem;
+      padding: 12px 0;
+    }
+    .sheet-box {
+      flex: 1 1 140px;
+      padding: 8px 12px;
+      font-size: 0.95rem;
+    }
+  }
 </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Plywood Box Sheet Optimizer</h1>
-    <form id="plyForm" autocomplete="off" novalidate>
-      <label for="length">Box Length</label>
-      <input type="number" step="0.01" id="length" name="length" min="0" required aria-required="true" />
-      <label for="width">Box Width</label>
-      <input type="number" step="0.01" id="width" name="width" min="0" required aria-required="true" />
-      <label for="height">Box Height</label>
-      <input type="number" step="0.01" id="height" name="height" min="0" required aria-required="true" />
-      <label for="thickness">Plywood Thickness (mm)</label>
-      <select id="thickness" name="thickness" required aria-required="true">
+  <div class="container" role="main" aria-labelledby="pageTitle">
+    <h1 id="pageTitle">Plywood Box Sheet Optimizer</h1>
+    <form id="plyForm" autocomplete="off" novalidate aria-describedby="formInstructions">
+      <p id="formInstructions" style="color:#475569; font-size:0.95rem; margin-bottom:18px;">
+        Enter box dimensions and thicknesses. Results will be shown in inches. Select at least one plywood sheet size.
+      </p>
+
+      <label for="unit">Input Unit (applies to all inputs)</label>
+      <select id="unit" name="unit" required aria-required="true">
+        <option value="cm" selected>Centimeter (cm)</option>
+        <option value="in">Inch (in)</option>
+      </select>
+
+      <label for="plywoodThickness">Plywood Thickness (mm)</label>
+      <select id="plywoodThickness" name="plywoodThickness" required aria-required="true">
         <option value="">Select thickness...</option>
         <option value="6">6 mm</option>
         <option value="8">8 mm</option>
@@ -42,285 +183,304 @@
         <option value="16">16 mm</option>
         <option value="18">18 mm</option>
       </select>
-      <label for="units">Units</label>
-      <select id="units" name="units" required aria-required="true">
-        <option value="cm" selected>Centimeter (cm)</option>
-        <option value="in">Inch (in)</option>
+
+      <label for="length">Box Length</label>
+      <input type="number" id="length" name="length" step="0.01" min="0" required aria-required="true" aria-describedby="lengthDesc" />
+
+      <label for="width">Box Width</label>
+      <input type="number" id="width" name="width" step="0.01" min="0" required aria-required="true" />
+
+      <label for="height">Box Height</label>
+      <input type="number" id="height" name="height" step="0.01" min="0" required aria-required="true" />
+
+      
+
+      <label for="plankThickness">Plank Thickness (inches)</label>
+      <select id="plankThickness" name="plankThickness" required aria-required="true">
+        <option value="">Select thickness...</option>
+        <option value="0.5">0.5 inch</option>
+        <option value="0.75" selected>0.75 inch</option>
+        <option value="1">1 inch</option>
+        <option value="1.5">1.5 inch</option>
       </select>
+
+      
+
       <label>Available Sheet Sizes (select one or more)</label>
-      <div class="sheets-row" id="sheetsRow">
+      <div class="sheets-row" id="sheetsRow" role="group" aria-labelledby="sheetSizesLabel">
         <div class="sheet-box">
-          <input type="checkbox" class="sheet" id="sheet-244x122" name="sheets" value="244x122" checked />
-          <label for="sheet-244x122">8×4 ft (244×122 cm)</label>
+          <input type="checkbox" class="sheet" id="sheet-96x48" name="sheets" value="96x48" checked />
+          <label for="sheet-96x48">8×4 ft (96×48 in)</label>
         </div>
         <div class="sheet-box">
-          <input type="checkbox" class="sheet" id="sheet-244x91" name="sheets" value="244x91" />
-          <label for="sheet-244x91">8×3 ft (244×91 cm)</label>
+          <input type="checkbox" class="sheet" id="sheet-96x36" name="sheets" value="96x36" />
+          <label for="sheet-96x36">8×3 ft (96×36 in)</label>
         </div>
         <div class="sheet-box">
-          <input type="checkbox" class="sheet" id="sheet-213x122" name="sheets" value="213x122" />
-          <label for="sheet-213x122">7×4 ft (213×122 cm)</label>
+          <input type="checkbox" class="sheet" id="sheet-84x48" name="sheets" value="84x48" />
+          <label for="sheet-84x48">7×4 ft (84×48 in)</label>
         </div>
         <div class="sheet-box">
-          <input type="checkbox" class="sheet" id="sheet-213x91" name="sheets" value="213x91" />
-          <label for="sheet-213x91">7×3 ft (213×91 cm)</label>
+          <input type="checkbox" class="sheet" id="sheet-84x36" name="sheets" value="84x36" />
+          <label for="sheet-84x36">7×3 ft (84×36 in)</label>
         </div>
       </div>
-      <button type="submit">Calculate Best Sheets</button>
+
+      <button type="submit" aria-label="Calculate best sheets">Calculate Best Sheets</button>
     </form>
-    <div id="result" aria-live="polite"></div>
+    <div id="result" aria-live="polite" role="region" style="margin-top:28px;"></div>
   </div>
 
-  <script>
-  const SHEET_SIZES = {
-    "244x122": { w: 244, h: 122, label: "8×4 ft (244×122 cm)", sqft: 32 },
-    "244x91": { w: 244, h: 91, label: "8×3 ft (244×91 cm)", sqft: 24 },
-    "213x122": { w: 213, h: 122, label: "7×4 ft (213×122 cm)", sqft: 28 },
-    "213x91": { w: 213, h: 91, label: "7×3 ft (213×91 cm)", sqft: 21 }
-  };
+<script>
+const SHEET_SIZES = {
+  "96x48": { w: 96, h: 48, label: "8×4 ft (96×48 in)", sqft: 32 },
+  "96x36": { w: 96, h: 36, label: "8×3 ft (96×36 in)", sqft: 24 },
+  "84x48": { w: 84, h: 48, label: "7×4 ft (84×48 in)", sqft: 28 },
+  "84x36": { w: 84, h: 36, label: "7×3 ft (84×36 in)", sqft: 21 }
+};
 
-  function convertThickness(mm, unit) {
-    if (unit === "cm") return mm / 10;
-    if (unit === "in") return mm / 25.4;
-    return mm;
-  }
+function mmToInches(mm) {
+  return mm / 25.4;
+}
+function cmToInches(cm) {
+  return cm / 2.54;
+}
+function sqftFromIn2(in2) {
+  return in2 / 144;
+}
 
-  function cm2ToSqft(cm2) {
-    return cm2 / (30.48 * 30.48);
-  }
+// Adjusted faces without bottom, thickness and plank thickness applied as requested
+function adjustedFaces(length, width, height, plywoodThicknessMM, plankThicknessIn, unit) {
+  let ptIn = mmToInches(plywoodThicknessMM);
+  let plIn = plankThicknessIn;
+  let L = unit === "cm" ? cmToInches(length) : length;
+  let W = unit === "cm" ? cmToInches(width) : width;
+  let H = unit === "cm" ? cmToInches(height) : height;
 
-  function adjustedFaces(length, width, height, thickness, unit) {
-    let t = convertThickness(thickness, unit);
-    return [
-      { label: "Top", w: length + 2 * t, h: width + 2 * t },
-      { label: "Front", w: length + 2 * t, h: height },
-      { label: "Back", w: length + 2 * t, h: height },
-      { label: "Left", w: width, h: height },
-      { label: "Right", w: width, h: height }
-    ];
-  }
+  // Front, back, top length adjusted by: length + 2*ptIn + 2*plIn
+  // Top breadth adjusted by: width + 2*ptIn + 2*plIn
+  return [
+    { label: "Top", w: L + 2 * ptIn + 2 * plIn, h: W + 2 * ptIn + 2 * plIn },
+    { label: "Front", w: L + 2 * ptIn + 2 * plIn, h: H },
+    { label: "Back", w: L + 2 * ptIn + 2 * plIn, h: H },
+    { label: "Left", w: W, h: H },
+    { label: "Right", w: W, h: H }
+  ];
+}
 
-  function overlaps(r1, r2) {
-    return !(
-      r1.x + r1.w <= r2.x ||
-      r1.x >= r2.x + r2.w ||
-      r1.y + r1.h <= r2.y ||
-      r1.y >= r2.y + r2.h
-    );
-  }
+function overlaps(r1, r2) {
+  return !(
+    r1.x + r1.w <= r2.x ||
+    r1.x >= r2.x + r2.w ||
+    r1.y + r1.h <= r2.y ||
+    r1.y >= r2.y + r2.h
+  );
+}
 
-  // Simple bottom-left packing for a single sheet
-  function packFacesInSheet(faces, sheetW, sheetH) {
-    let usedRects = [],
-      placements = [];
+function packFacesInSheet(faces, sheetW, sheetH) {
+  let usedRects = [], placements = [];
 
-    for (let face of faces) {
-      let placed = false;
-      for (let [rotated, fw, fh] of [
-        [false, face.w, face.h],
-        [true, face.h, face.w]
-      ]) {
-        outer: for (let y = 0; y <= sheetH - fh; y++) {
-          for (let x = 0; x <= sheetW - fw; x++) {
-            let candidate = { x, y, w: fw, h: fh };
-            if (!usedRects.some((r) => overlaps(r, candidate))) {
-              placements.push({ ...face, x, y, w: fw, h: fh, rotated });
-              usedRects.push(candidate);
-              placed = true;
-              break outer;
-            }
+  for (let face of faces) {
+    let placed = false;
+    for (let [rotated, fw, fh] of [[false, face.w, face.h], [true, face.h, face.w]]) {
+      outer:
+      for (let y = 0; y <= sheetH - fh; y++) {
+        for (let x = 0; x <= sheetW - fw; x++) {
+          let candidate = { x, y, w: fw, h: fh };
+          if (!usedRects.some(r => overlaps(r, candidate))) {
+            placements.push({ ...face, x, y, w: fw, h: fh, rotated });
+            usedRects.push(candidate);
+            placed = true;
+            break outer;
           }
         }
-        if (placed) break;
       }
-      if (!placed) return null;
+      if (placed) break;
     }
-    return placements;
+    if (!placed) return null;
   }
+  return placements;
+}
 
-  // For single sheet size selection: greedy packing allowing unlimited sheets
-  function packMultipleSheets(faces, sheetKey) {
-    const sheetW = SHEET_SIZES[sheetKey].w, sheetH = SHEET_SIZES[sheetKey].h;
-    let facesRemaining = faces.slice();
-    let sheets = [];
-    while (facesRemaining.length) {
-      // Try all combinations of faces to fill this sheet (brute force for up to 5 faces)
-      let maxPacked = null, maxPackedIdxs = [];
-      let n = facesRemaining.length;
-      for (let bits = 1; bits < (1 << n); bits++) {
-        let tryFaces = [];
-        let idxs = [];
-        for (let k = 0; k < n; ++k) {
-          if (bits & (1 << k)) {
-            tryFaces.push(facesRemaining[k]);
-            idxs.push(k);
-          }
-        }
-        let packed = packFacesInSheet(tryFaces, sheetW, sheetH);
-        if (packed && (!maxPacked || packed.length > maxPacked.length)) {
-          maxPacked = packed;
-          maxPackedIdxs = idxs;
-          if (packed.length === n) break; // can fit all, no need to try more
+function packMultipleSheets(faces, sheetKey) {
+  const sheetW = SHEET_SIZES[sheetKey].w, sheetH = SHEET_SIZES[sheetKey].h;
+  let facesRemaining = faces.slice();
+  let sheets = [];
+  while (facesRemaining.length) {
+    let maxPacked = null, maxPackedIdxs = [];
+    const n = facesRemaining.length;
+    for (let bits = 1; bits < (1 << n); bits++) {
+      let tryFaces = [], idxs = [];
+      for (let k = 0; k < n; ++k) {
+        if (bits & (1 << k)) {
+          tryFaces.push(facesRemaining[k]);
+          idxs.push(k);
         }
       }
-      if (!maxPacked) return null; // can't even fit a single face, fail
-      sheets.push({ sheet: sheetKey, faces: maxPacked });
-      // Remove packed faces from facesRemaining
-      facesRemaining = facesRemaining.filter((f, i) => !maxPackedIdxs.includes(i));
-    }
-    return sheets;
-  }
-
-  // For multiple sheet sizes: recursive optimal search
-  function recursiveAssign(faces, sheetKeys, curAssign = []) {
-    if (faces.length === 0) {
-      let totalWaste = calcWaste(curAssign);
-      return { assignment: curAssign, waste: totalWaste };
-    }
-    let bestRes = null;
-    let face = faces[0];
-    for (let sheetKey of sheetKeys) {
-      let sheetW = SHEET_SIZES[sheetKey].w,
-        sheetH = SHEET_SIZES[sheetKey].h;
-      let assignedFacesEntry = curAssign.find((s) => s.sheet === sheetKey);
-      let combinedFaces = assignedFacesEntry ? assignedFacesEntry.faces.slice() : [];
-      combinedFaces.push(face);
-      let packed = packFacesInSheet(combinedFaces, sheetW, sheetH);
-      if (packed) {
-        let newAssign = curAssign.filter((s) => s.sheet !== sheetKey);
-        newAssign.push({ sheet: sheetKey, faces: packed });
-        let result = recursiveAssign(faces.slice(1), sheetKeys, newAssign);
-        if (!bestRes || result.waste < bestRes.waste) bestRes = result;
+      let packed = packFacesInSheet(tryFaces, sheetW, sheetH);
+      if (packed && (!maxPacked || packed.length > maxPacked.length)) {
+        maxPacked = packed;
+        maxPackedIdxs = idxs;
+        if (packed.length === n) break;
       }
     }
-    return bestRes;
+    if (!maxPacked) return null; // Can't fit at least one face, fail
+    sheets.push({ sheet: sheetKey, faces: maxPacked });
+    facesRemaining = facesRemaining.filter((_, i) => !maxPackedIdxs.includes(i));
   }
+  return sheets;
+}
 
-  function calcWaste(assignments) {
-    let totalFaceArea = 0, totalSheetArea = 0;
-    assignments.forEach(sheet => {
-      let s = SHEET_SIZES[sheet.sheet];
-      totalSheetArea += s.w * s.h;
-      sheet.faces.forEach(face => totalFaceArea += face.w * face.h);
-    });
-    return totalSheetArea - totalFaceArea;
+function calcWaste(assignments) {
+  let totalFaceArea = 0, totalSheetArea = 0;
+  assignments.forEach(sheet => {
+    let s = SHEET_SIZES[sheet.sheet];
+    totalSheetArea += s.w * s.h;
+    sheet.faces.forEach(face => totalFaceArea += face.w * face.h);
+  });
+  return totalSheetArea - totalFaceArea;
+}
+
+function recursiveAssign(faces, sheetKeys, curAssign = []) {
+  if (faces.length === 0) {
+    let totalWaste = calcWaste(curAssign);
+    return { assignment: curAssign, waste: totalWaste };
   }
-
-  function drawSheetSheet(assign, sheetKey, canvas) {
-    let ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const s = SHEET_SIZES[sheetKey];
-    const padding = 20;
-    const scale = Math.min((canvas.width - padding) / s.w, (canvas.height - padding) / s.h);
-    ctx.strokeStyle = "#2563eb";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(padding / 2, padding / 2, s.w * scale, s.h * scale);
-
-    for (let face of assign.faces) {
-      ctx.save();
-      ctx.globalAlpha = 0.85;
-      ctx.fillStyle = "#84a9ffcc";
-      ctx.strokeStyle = "#1e40af";
-      ctx.lineWidth = 1.6;
-
-      let x = padding / 2 + face.x * scale;
-      let y = padding / 2 + face.y * scale;
-      let w = face.w * scale;
-      let h = face.h * scale;
-
-      ctx.fillRect(x, y, w, h);
-      ctx.strokeRect(x, y, w, h);
-      ctx.fillStyle = "#1e3a8a";
-      ctx.font = "bold 14px Arial, sans-serif";
-      ctx.fillText(face.label, x + 6, y + 20);
-
-      ctx.fillStyle = "#1e3a8a";
-      ctx.font = "12px Arial, sans-serif";
-      ctx.fillText(`${face.w.toFixed(1)}×${face.h.toFixed(1)}`, x + 6, y + h - 8);
-      ctx.restore();
+  let bestRes = null;
+  let face = faces[0];
+  for (let sheetKey of sheetKeys) {
+    let sheetW = SHEET_SIZES[sheetKey].w,
+      sheetH = SHEET_SIZES[sheetKey].h;
+    let assignedFacesEntry = curAssign.find(s => s.sheet === sheetKey);
+    let combinedFaces = assignedFacesEntry ? assignedFacesEntry.faces.slice() : [];
+    combinedFaces.push(face);
+    let packed = packFacesInSheet(combinedFaces, sheetW, sheetH);
+    if (packed) {
+      let newAssign = curAssign.filter(s => s.sheet !== sheetKey);
+      newAssign.push({ sheet: sheetKey, faces: packed });
+      let result = recursiveAssign(faces.slice(1), sheetKeys, newAssign);
+      if (!bestRes || result.waste < bestRes.waste) bestRes = result;
     }
   }
+  return bestRes;
+}
 
-  document.getElementById("plyForm").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const length = parseFloat(document.getElementById("length").value);
-    const width = parseFloat(document.getElementById("width").value);
-    const height = parseFloat(document.getElementById("height").value);
-    const thicknessVal = document.getElementById("thickness").value;
-    const thickness = parseFloat(thicknessVal);
-    const units = document.getElementById("units").value;
-    const sheetsChecked = Array.from(
-      document.querySelectorAll(".sheet:checked")
-    ).map((el) => el.value);
+function drawSheetSheet(assign, sheetKey, canvas) {
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const s = SHEET_SIZES[sheetKey];
+  const padding = 20;
+  const scale = Math.min((canvas.width - padding) / s.w, (canvas.height - padding) / s.h);
+  ctx.strokeStyle = "#2563eb";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(padding / 2, padding / 2, s.w * scale, s.h * scale);
+  for (const face of assign.faces) {
+    ctx.save();
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = "#84a9ffcc";
+    ctx.strokeStyle = "#1e40af";
+    ctx.lineWidth = 1.6;
+    const x = padding / 2 + face.x * scale;
+    const y = padding / 2 + face.y * scale;
+    const w = face.w * scale;
+    const h = face.h * scale;
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeRect(x, y, w, h);
+    ctx.fillStyle = "#1e3a8a";
+    ctx.font = "bold 13px Inter, Arial, sans-serif";
+    ctx.fillText(face.label, x + 6, y + 20);
+    ctx.fillStyle = "#1e3a8a";
+    ctx.font = "12px Inter, Arial, sans-serif";
+    ctx.fillText(`${face.w.toFixed(2)}×${face.h.toFixed(2)} in`, x + 6, y + h - 8);
+    ctx.restore();
+  }
+}
 
-    const resultDiv = document.getElementById("result");
-    resultDiv.innerHTML = "";
+document.getElementById("plyForm").addEventListener("submit", e => {
+  e.preventDefault();
 
-    if (
-      isNaN(length) ||
-      length <= 0 ||
-      isNaN(width) ||
-      width <= 0 ||
-      isNaN(height) ||
-      height <= 0 ||
-      isNaN(thickness) ||
-      thickness <= 0 ||
-      thicknessVal.trim() === "" ||
-      sheetsChecked.length === 0
-    ) {
-      resultDiv.innerHTML = `<div class="error">Please fill all fields with valid positive values and select at least one sheet size.</div>`;
+  const length = parseFloat(document.getElementById("length").value);
+  const width = parseFloat(document.getElementById("width").value);
+  const height = parseFloat(document.getElementById("height").value);
+  const plywoodThicknessVal = document.getElementById("plywoodThickness").value;
+  const plywoodThickness = parseFloat(plywoodThicknessVal);
+  const plankThicknessVal = document.getElementById("plankThickness").value;
+  const plankThickness = parseFloat(plankThicknessVal);
+  const unit = document.getElementById("unit").value;
+  const sheetsChecked = Array.from(
+    document.querySelectorAll(".sheet:checked")
+  ).map(el => el.value);
+
+  const resultDiv = document.getElementById("result");
+  resultDiv.innerHTML = "";
+
+  // Validate inputs
+  if (
+    isNaN(length) || length <= 0 ||
+    isNaN(width) || width <= 0 ||
+    isNaN(height) || height <= 0 ||
+    isNaN(plywoodThickness) || plywoodThickness <= 0 ||
+    isNaN(plankThickness) || plankThickness <= 0 ||
+    plywoodThicknessVal.trim() === "" ||
+    plankThicknessVal.trim() === "" ||
+    sheetsChecked.length === 0
+  ) {
+    resultDiv.innerHTML = `<div class="error">Please fill all fields with valid positive values and select at least one sheet size.</div>`;
+    return;
+  }
+
+  // Compute adjusted faces
+  const faces = adjustedFaces(length, width, height, plywoodThickness, plankThickness, unit);
+
+  let assignments = null;
+  let waste = NaN;
+
+  if (sheetsChecked.length === 1) {
+    assignments = packMultipleSheets(faces, sheetsChecked[0]);
+    if (!assignments) {
+      resultDiv.innerHTML = `<div class="error">No valid layout found. At least one piece does not fit the selected sheet size.</div>`;
       return;
     }
-
-    const faces = adjustedFaces(length, width, height, thickness, units);
-    let assignments = null, waste = NaN;
-
-    if (sheetsChecked.length === 1) {
-      // Single sheet size mode: use as many sheets of that size as needed
-      assignments = packMultipleSheets(faces, sheetsChecked[0]);
-      if (!assignments) {
-        resultDiv.innerHTML = `<div class="error">No valid layout found. At least one piece doesn't fit selected sheet size.</div>`;
-        return;
-      }
-      waste = calcWaste(assignments);
-    } else {
-      // Multi-size: assign faces for optimal configuration (recursive search)
-      const optimal = recursiveAssign(faces, sheetsChecked, []);
-      if (!optimal) {
-        resultDiv.innerHTML = `<div class="error">No valid layout found. Try larger sheets or adjust box dimensions.</div>`;
-        return;
-      }
-      assignments = optimal.assignment;
-      waste = optimal.waste;
+    waste = calcWaste(assignments);
+  } else {
+    const optimal = recursiveAssign(faces, sheetsChecked, []);
+    if (!optimal) {
+      resultDiv.innerHTML = `<div class="error">No valid layout found. Try selecting larger sheets or adjusting box dimensions.</div>`;
+      return;
     }
+    assignments = optimal.assignment;
+    waste = optimal.waste;
+  }
 
-    // Display results
-    const totalWasteSqft = cm2ToSqft(waste);
-    let html = '<div class="summary">';
-    html += `<b>Optimal Sheet Assignment</b><br>`;
-    html += `Total Sheets Used: <b>${assignments.length}</b><br>`;
-    html += `Total Wastage: <b>${totalWasteSqft.toFixed(2)} sq.ft</b>`;
-    html += "</div>";
+  // Show results
+  const totalWasteSqft = sqftFromIn2(waste);
+  let html = '<div class="summary">';
+  html += `<b>Optimal Sheet Assignment</b><br>`;
+  html += `Total Sheets Used: <b>${assignments.length}</b><br>`;
+  html += `Total Wastage: <b>${totalWasteSqft.toFixed(2)} sq.ft</b>`;
+  html += "</div>";
 
-    assignments.forEach((sheetAssign, idx) => {
-      const sheetLbl = SHEET_SIZES[sheetAssign.sheet].label;
-      html += `<div class="assignment"><b>Sheet #${idx + 1}:</b> ${sheetLbl}<ul>`;
-      sheetAssign.faces.forEach((face) => {
-        const w = face.rotated ? face.h : face.w;
-        const h = face.rotated ? face.w : face.h;
-        html += `<li>${face.label}: ${w.toFixed(2)} × ${h.toFixed(2)} ${units}${face.rotated ? " (rotated)" : ""}</li>`;
-      });
-      html += "</ul><canvas id='canvas" + idx + "' width='480' height='160'></canvas></div>";
+  assignments.forEach((sheetAssign, idx) => {
+    const sheetLbl = SHEET_SIZES[sheetAssign.sheet].label;
+    html += `<div class="assignment"><b>Sheet #${idx + 1}:</b> ${sheetLbl}<ul>`;
+    sheetAssign.faces.forEach(face => {
+      const w = face.rotated ? face.h : face.w;
+      const h = face.rotated ? face.w : face.h;
+      html += `<li>${face.label}: ${w.toFixed(2)} × ${h.toFixed(2)} in${face.rotated ? " (rotated)" : ""}</li>`;
     });
-    resultDiv.innerHTML = html;
-
-    setTimeout(() => {
-      assignments.forEach((sheetAssign, idx) => {
-        const canvas = document.getElementById("canvas" + idx);
-        if (canvas) drawSheetSheet(sheetAssign, sheetAssign.sheet, canvas);
-      });
-    }, 20);
+    html += `</ul><canvas id='canvas${idx}' width='480' height='160'></canvas></div>`;
   });
-  </script>
+
+  resultDiv.innerHTML = html;
+
+  setTimeout(() => {
+    assignments.forEach((sheetAssign, idx) => {
+      const canvas = document.getElementById("canvas" + idx);
+      if (canvas) drawSheetSheet(sheetAssign, sheetAssign.sheet, canvas);
+    });
+  }, 20);
+
+});
+</script>
 </body>
 </html>
