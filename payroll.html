@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Payroll System (Firebase Compat)</title>
+<title>Payroll System</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
@@ -40,11 +40,11 @@
       
       <!-- Work Type Dropdown + Hours Worked -->
       <div class="input-group mb-2">
-        <select id="hoursType" class="form-select" onchange="setHoursWorked()">
-          <option value="manual">Manual</option>
-          <option value="full">Full Day</option>
+        <select id="hoursType" class="form-select" onchange="setHoursWorked()">          
+          <option value="full" selected>Full Day</option>
           <option value="half">Half Day</option>
           <option value="absent">Absent</option>
+          <option value="manual">Manual</option>
         </select>
         <input type="number" id="hoursWorked" step="0.01" class="form-control" placeholder="Hours Worked">
       </div>
