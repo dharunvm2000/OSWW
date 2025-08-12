@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Payroll System (Firebase)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+#loadingOverlay {
+  display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+  background:rgba(255,255,255,0.7);
+  z-index:2000; justify-content:center; align-items:center;
+}
+.toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 3000; }
+</style>
+</head>
+<body class="bg-light">
+
+<div id="loadingOverlay"><div class="spinner-border text-primary" style="width:3rem;height:3rem;"></div></div>
+
+<div class="container py-3">
+  <h2 class="text-center mb-3">Payroll Management</h2>
+
+  <!-- Menu Tabs -->
+  <ul class="nav nav-tabs mb-3" id="menuTabs">
+    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#dailyTab">Daily Entry</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#dedTab">Deductions</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#sumTab">Weekly Summary</a></li>
+  </ul>
+
+  <div class="tab-content">
+
+    <!-- Daily Entry -->
+    <div class="tab-pane fade show active" id="dailyTab">
+      <select id="empName" class="form-select mb-2"></select>
+      <input type="date" id="workDate" class="form-control mb-2">
+      <input type="number" step="0.01" id="hoursWorked" class="form-control mb-2" placeholder="Hours Worked">
+      <input type="number" step="0.01" id="otHours" class="form-control mb-2" placeholder="OT Hours">
+      <input type="number" id="dailyPay" class="form-control mb-2" readonly placeholder="Daily Pay">
+      <button id="btnSaveDaily" onclick="addDailyEntryUI()" class="btn btn-success w-100">Save Entry</button>
+    </div>
+
+    <!-- Deductions -->
+    <div class="tab-pane fade" id="dedTab">
+      <select id="dedEmpName" class="form-select mb-2"></select>
+      <input type="date" id="dedDate" class="form-control mb-2">
+      <input type="number" step="0.01" id="dedAmount" class="form-control mb-2" placeholder="Deduction Amount">
+      <input type="text" id="dedReason" class="form-control mb-2" placeholder="Reason">
+      <button id="btnSaveDed" onclick="addDeductionUI()" class="btn btn-danger w-100">Add Deduction</button>
+    </div>
+
+    <!-- Summary -->
+    <div class="tab-pane fade" id="sumTab">
+      <input type="date" id="sumWeekStart" class="form-control mb-2">
+      <button id="btnLoadSum" onclick="loadSummaryUI()" class="btn btn-primary w-100">Load Summary</button>
+      <div class="table-responsive mt-3">
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>Emp</th><th>Total Hrs</th><th>OT Hrs</th>
+              <th>Salary</th><th>OT</th><th>Deductions</th><th>Net</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="summaryBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container">
+  <div id="liveToast" class="toast text-white">
+    <div class="d-flex">
+      <div class="toast-body" id="toastMsg"></div>
+      <button type="button" class="btn-close btn-close-white m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Print Modal -->
+<div class="modal fade" id="printModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Payroll Slip</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body" id="printContent"></div>
+      <div class="modal-footer"><button onclick="window.print()" class="btn btn-secondary">Print</button></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
+
+<script>
+// ===== Firebase Config =====
+const firebaseConfig = {
+  apiKey: "YOUR_KEY",
+  authDomain: "YOUR_DOMAIN",
+  projectId: "YOUR_PROJECT_ID"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ===== Globals =====
+let employees = [];
+let toast;
+function showToast(msg, type="success") {
+  const t=document.getElementById("liveToast");
+  t.className=`toast align-items-center text-white bg-${type}`;
+  document.getElementById("toastMsg").textContent=msg;
+  if(!toast) toast=new bootstrap.Toast(t,{delay:2000});
+  toast.show();
+}
+function toggleLoading(show){
+  document.getElementById("loadingOverlay").style.display= show?"flex":"none";
+}
+function todayStr(){ return new Date().toISOString().split("T")[0]; }
+
+// ===== Load Employees =====
+async function loadEmployees(){
+  const snap = await db.collection("employees").get();
+  employees = [];
+  let empSel=document.getElementById("empName");
+  let dedSel=document.getElementById("dedEmpName");
+  empSel.innerHTML=""; dedSel.innerHTML="";
+  snap.forEach(doc=>{
+    employees.push({id:doc.id,...doc.data()});
+    empSel.add(new Option(doc.data().name, doc.id));
+    dedSel.add(new Option(doc.data().name, doc.id));
+  });
+  document.getElementById("workDate").value=todayStr();
+  document.getElementById("dedDate").value=todayStr();
+  fillDailyPay();
+}
+function fillDailyPay(){
+  let id=document.getElementById("empName").value;
+  let e=employees.find(emp=>emp.id===id);
+  document.getElementById("dailyPay").value = e? e.dailyPay:"";
+}
+
+// ===== Add Daily Entry =====
+async function addDailyEntryUI(){
+  toggleLoading(true);
+  let id=document.getElementById("empName").value;
+  let date=document.getElementById("workDate").value;
+  let hours=parseFloat(document.getElementById("hoursWorked").value)||0;
+  let ot=parseFloat(document.getElementById("otHours").value)||0;
+  let emp=employees.find(e=>e.id===id);
+  if(!emp){ toggleLoading(false); showToast("No employee","danger"); return;}
+  let salAmt=(hours*emp.dailyPay)/8;
+  let otAmt=(ot*emp.dailyPay)/8;
+  await db.collection("payroll").add({
+    employeeId:id, date, hoursWorked:hours, otHours:ot,
+    salaryAmt:salAmt, otAmt:otAmt
+  });
+  toggleLoading(false);
+  showToast("Daily entry saved","success");
+}
+
+// ===== Add Deduction =====
+async function addDeductionUI(){
+  toggleLoading(true);
+  let id=document.getElementById("dedEmpName").value;
+  let date=document.getElementById("dedDate").value;
+  let amt=parseFloat(document.getElementById("dedAmount").value)||0;
+  let reason=document.getElementById("dedReason").value||"";
+  await db.collection("deductions").add({
+    employeeId:id, date, amount:amt, reason
+  });
+  toggleLoading(false);
+  showToast("Deduction added","warning");
+}
+
+// ===== Load Summary =====
+async function loadSummaryUI(){
+  let weekStart=document.getElementById("sumWeekStart").value;
+  if(!weekStart){ showToast("Select week start","danger"); return;}
+  toggleLoading(true);
+  let weekEnd=new Date(weekStart); weekEnd.setDate(weekEnd.getDate()+6);
+  const payrollSnap = await db.collection("payroll")
+    .where("date", ">=", weekStart)
+    .where("date", "<=", weekEnd.toISOString().split("T")[0])
+    .get();
+  if(payrollSnap.empty){ toggleLoading(false); showToast("No data","danger"); return; }
+  let summary={};
+  payrollSnap.forEach(doc=>{
+    const d=doc.data();
+    if(!summary[d.employeeId]) summary[d.employeeId]={hours:0,otHours:0,salary:0,ot:0};
+    summary[d.employeeId].hours +=d.hoursWorked;
+    summary[d.employeeId].otHours += d.otHours;
+    summary[d.employeeId].salary += d.salaryAmt;
+    summary[d.employeeId].ot += d.otAmt;
+  });
+  const dedSnap = await db.collection("deductions")
+    .where("date", ">=", weekStart)
+    .where("date", "<=", weekEnd.toISOString().split("T")[0])
+    .get();
+  let dedMap={};
+  dedSnap.forEach(doc=>{
+    const d=doc.data();
+    dedMap[d.employeeId] = (dedMap[d.employeeId]||0) + d.amount;
+  });
+  let tbody=document.getElementById("summaryBody");
+  tbody.innerHTML="";
+  for(const empId in summary){
+    let e=employees.find(x=>x.id===empId);
+    let ded=dedMap[empId]||0;
+    let net=summary[empId].salary+summary[empId].ot-ded;
+    let tr=`<tr>
+      <td>${e?e.name:empId}</td>
+      <td>${summary[empId].hours.toFixed(2)}</td>
+      <td>${summary[empId].otHours.toFixed(2)}</td>
+      <td>${summary[empId].salary.toFixed(2)}</td>
+      <td>${summary[empId].ot.toFixed(2)}</td>
+      <td>${ded.toFixed(2)}</td>
+      <td>${net.toFixed(2)}</td>
+      <td><button class='btn btn-sm btn-outline-secondary' onclick="printSlip('${empId}','${weekStart}')">Print</button></td>
+    </tr>`;
+    tbody.insertAdjacentHTML("beforeend",tr);
+  }
+  toggleLoading(false);
+}
+
+// ===== Print Slip =====
+async function printSlip(empId, weekStart){
+  let weekEnd=new Date(weekStart); weekEnd.setDate(weekEnd.getDate()+6);
+  const e=employees.find(x=>x.id===empId);
+  const ps=await db.collection("payroll").where("employeeId","==",empId)
+    .where("date", ">=", weekStart)
+    .where("date", "<=", weekEnd.toISOString().split("T")[0]).get();
+  let hours=0,ot=0,sal=0,otA=0;
+  ps.forEach(doc=>{
+    const d=doc.data();
+    hours+=d.hoursWorked; ot+=d.otHours; sal+=d.salaryAmt; otA+=d.otAmt;
+  });
+  const ds=await db.collection("deductions").where("employeeId","==",empId)
+    .where("date", ">=", weekStart)
+    .where("date", "<=", weekEnd.toISOString().split("T")[0]).get();
+  let ded=0; ds.forEach(doc=> ded+=doc.data().amount);
+  document.getElementById("printContent").innerHTML=`
+    <p><b>Employee:</b> ${e?e.name:empId}</p>
+    <p>Worked Hours: ${hours} → ₹${sal.toFixed(2)}</p>
+    <p>OT Hours: ${ot} → ₹${otA.toFixed(2)}</p>
+    <p><b>Total:</b> ₹${(sal+otA).toFixed(2)}</p>
+    <p><b>Deductions:</b> ₹${ded.toFixed(2)}</p>
+    <p><b>Net Salary:</b> ₹${(sal+otA-ded).toFixed(2)}</p>`;
+  new bootstrap.Modal(document.getElementById("printModal")).show();
+}
+
+// Init
+loadEmployees();
+</script>
+</body>
+</html>
