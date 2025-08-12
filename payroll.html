@@ -37,7 +37,18 @@
     <div class="tab-pane fade show active" id="dailyTab">
       <select id="empName" class="form-select mb-2" onchange="fillDailyPay()"></select>
       <input type="date" id="workDate" class="form-control mb-2">
-      <input type="number" id="hoursWorked" step="0.01" class="form-control mb-2" placeholder="Hours Worked">
+      
+      <!-- Work Type Dropdown + Hours Worked -->
+      <div class="input-group mb-2">
+        <select id="hoursType" class="form-select" onchange="setHoursWorked()">
+          <option value="manual">Manual</option>
+          <option value="full">Full Day</option>
+          <option value="half">Half Day</option>
+          <option value="absent">Absent</option>
+        </select>
+        <input type="number" id="hoursWorked" step="0.01" class="form-control" placeholder="Hours Worked">
+      </div>
+      
       <input type="number" id="otHours" step="0.01" class="form-control mb-2" placeholder="OT Hours">
       <input type="number" id="dailyPay" class="form-control mb-2" readonly placeholder="Daily Pay">
       <button class="btn btn-success w-100" onclick="addDailyEntryUI()">Save Entry</button>
@@ -46,7 +57,7 @@
       <div class="table-responsive">
         <table class="table table-sm table-bordered" id="dailyTable">
           <thead class="table-light">
-            <tr><th>Date</th><th>Employee</th><th>Hours</th><th>OT</th><th>Salary</th><th>OT Amt</th><th>Actions</th></tr>
+            <tr><th>Date</th><th>Employee</th><th>Work Type</th><th>Hours</th><th>OT</th><th>Salary</th><th>OT Amt</th><th>Actions</th></tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -137,13 +148,15 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 <script>
 /* ==== CONFIG ==== */
-const firebaseConfig = { apiKey: "AIzaSyDdjd5LwyoaUMHmlGGy51z5_56_qUL8Pd0",
+const firebaseConfig = {
+  apiKey: "AIzaSyDdjd5LwyoaUMHmlGGy51z5_56_qUL8Pd0",
   authDomain: "payroll-5649d.firebaseapp.com",
   projectId: "payroll-5649d",
   storageBucket: "payroll-5649d.firebasestorage.app",
   messagingSenderId: "210566811878",
   appId: "1:210566811878:web:6cd0e5db8e623e87d6ab27",
-  measurementId: "G-7WJ3S6V1FG"};
+  measurementId: "G-7WJ3S6V1FG"
+};
 firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
 let employees=[], toast;
@@ -152,6 +165,16 @@ const pageSize=5;
 function showToast(msg,type="success"){const t=document.getElementById("liveToast");t.className=`toast align-items-center text-white bg-${type}`;document.getElementById("toastMsg").textContent=msg;if(!toast)toast=new bootstrap.Toast(t,{delay:3000});toast.show();}
 function toggleLoading(s){document.getElementById("loadingOverlay").style.display=s?"flex":"none";}
 function todayStr(){return new Date().toISOString().split("T")[0];}
+
+/* Attendance Hours Autofill */
+function setHoursWorked() {
+  let type=document.getElementById("hoursType").value;
+  if(type==="full"){hoursWorked.value=8;hoursWorked.readOnly=true;}
+  else if(type==="half"){hoursWorked.value=4;hoursWorked.readOnly=true;}
+  else if(type==="absent"){hoursWorked.value=0;hoursWorked.readOnly=true;}
+  else{hoursWorked.readOnly=false;hoursWorked.value="";}
+  fillDailyPay();
+}
 
 /* EMPLOYEES */
 async function loadEmployees(){
@@ -173,7 +196,7 @@ async function loadEmployeeList(){
 async function updateEmployee(id){await db.collection("employees").doc(id).update({name:document.getElementById(`name_${id}`).value.trim(),dailyPay:parseFloat(document.getElementById(`pay_${id}`).value)});showToast("Updated");loadEmployees();}
 async function deleteEmployee(id){if(confirm("Delete?")){await db.collection("employees").doc(id).delete();showToast("Deleted");loadEmployeeList();loadEmployees();}}
 
-/* DAILY ENTRIES - with edit/delete */
+/* DAILY ENTRIES */
 let dailyLastDoc=null,dailyPage=[],dailyPageIndex=0;
 async function loadDailyEntries(direction){toggleLoading(true);
   let q=db.collection("payroll").orderBy("date","desc").limit(pageSize);
@@ -183,35 +206,63 @@ async function loadDailyEntries(direction){toggleLoading(true);
   dailyFirstDoc=snap.docs[0];dailyLastDoc=snap.docs[snap.docs.length-1];
   if(direction!=="prev"){dailyPage[dailyPageIndex]=dailyFirstDoc;dailyPageIndex++;}
   const tb=document.querySelector("#dailyTable tbody");tb.innerHTML="";
-  snap.forEach(doc=>{const d=doc.data();const emp=employees.find(e=>e.id===d.employeeId);
+  snap.forEach(doc=>{
+    const d=doc.data();const emp=employees.find(e=>e.id===d.employeeId);
+    const wtOptions=`
+      <select id="workType_${doc.id}" class="form-select form-select-sm" onchange="setHoursFromTable('${doc.id}')">
+        <option value="manual"${(d.attendanceType||'manual')==='manual'?' selected':''}>Manual</option>
+        <option value="full"${d.attendanceType==='full'?' selected':''}>Full Day</option>
+        <option value="half"${d.attendanceType==='half'?' selected':''}>Half Day</option>
+        <option value="absent"${d.attendanceType==='absent'?' selected':''}>Absent</option>
+      </select>`;
     tb.innerHTML+=`<tr>
       <td><input type="date" class="form-control form-control-sm" value="${d.date}" id="date_${doc.id}"></td>
       <td>${emp?emp.name:d.employeeId}</td>
+      <td>${wtOptions}</td>
       <td><input type="number" step="0.01" class="form-control form-control-sm" value="${d.hoursWorked}" id="hours_${doc.id}"></td>
       <td><input type="number" step="0.01" class="form-control form-control-sm" value="${d.otHours}" id="ot_${doc.id}"></td>
       <td>${d.salaryAmt.toFixed(2)}</td>
       <td>${d.otAmt.toFixed(2)}</td>
       <td><button class="btn btn-sm btn-primary" onclick="updateDailyEntry('${doc.id}')">Save</button>
           <button class="btn btn-sm btn-danger" onclick="deleteDailyEntry('${doc.id}')">Del</button></td>
-    </tr>`;});
+    </tr>`;
+  });
   toggleLoading(false);
 }
-async function addDailyEntryUI(){const emp=employees.find(e=>e.id===empName.value);if(!emp)return showToast("No employee","danger");
-  await db.collection("payroll").add({employeeId:empName.value,date:workDate.value,hoursWorked:+hoursWorked.value||0,otHours:+otHours.value||0,
-    salaryAmt:(+hoursWorked.value||0)*emp.dailyPay/8,otAmt:(+otHours.value||0)*emp.dailyPay/8});
-  showToast("Daily saved");loadDailyEntries();}
+function setHoursFromTable(id){
+  const type=document.getElementById(`workType_${id}`).value;
+  const hrsInput=document.getElementById(`hours_${id}`);
+  if(type==="full"){hrsInput.value=8;hrsInput.readOnly=true;}
+  else if(type==="half"){hrsInput.value=4;hrsInput.readOnly=true;}
+  else if(type==="absent"){hrsInput.value=0;hrsInput.readOnly=true;}
+  else{hrsInput.readOnly=false;}
+}
+async function addDailyEntryUI(){
+  const emp=employees.find(e=>e.id===empName.value);if(!emp)return showToast("No employee","danger");
+  const hours=+hoursWorked.value||0;const ot=+otHours.value||0;
+  await db.collection("payroll").add({
+    employeeId:empName.value,date:workDate.value,hoursWorked:hours,otHours:ot,
+    attendanceType:document.getElementById("hoursType").value,
+    salaryAmt:(hours*emp.dailyPay)/8,otAmt:(ot*emp.dailyPay)/8
+  });
+  showToast("Daily saved");loadDailyEntries();
+}
 async function updateDailyEntry(id){
   const hours=parseFloat(document.getElementById(`hours_${id}`).value)||0;
   const ot=parseFloat(document.getElementById(`ot_${id}`).value)||0;
   const date=document.getElementById(`date_${id}`).value;
   const snap=await db.collection("payroll").doc(id).get();const data=snap.data();
   const emp=employees.find(e=>e.id===data.employeeId);
-  await db.collection("payroll").doc(id).update({date,hoursWorked:hours,otHours:ot,
-    salaryAmt:(hours*emp.dailyPay)/8,otAmt:(ot*emp.dailyPay)/8});
-  showToast("Updated");loadDailyEntries();}
+  let attType=document.getElementById(`workType_${id}`).value;
+  await db.collection("payroll").doc(id).update({
+    date,hoursWorked:hours,otHours:ot,attendanceType:attType,
+    salaryAmt:(hours*emp.dailyPay)/8,otAmt:(ot*emp.dailyPay)/8
+  });
+  showToast("Updated");loadDailyEntries();
+}
 async function deleteDailyEntry(id){if(confirm("Delete?")){await db.collection("payroll").doc(id).delete();showToast("Deleted","warning");loadDailyEntries();}}
 
-/* DEDUCTIONS - with edit/delete */
+/* Deductions same as before */
 let dedLastDoc=null,dedPage=[],dedPageIndex=0;
 async function loadDeductionEntries(direction){toggleLoading(true);
   let q=db.collection("deductions").orderBy("date","desc").limit(pageSize);
@@ -257,9 +308,11 @@ async function loadSummaryUI(){const s=sumStartDate.value,e=sumEndDate.value;if(
 }
 async function showDetails(id,s,e){const emp=employees.find(x=>x.id===id);if(!emp)return showToast("No emp","danger");
   const map={},paySnap=await db.collection("payroll").where("employeeId","==",id).where("date",">=",s).where("date","<=",e).orderBy("date").get();
-  let th=0,to=0,ts=0,toa=0,td=0;
+  let th=0,to=0,ts=0,toa=0,td=0,absentDays=0;
   paySnap.forEach(doc=>{const d=doc.data();map[d.date]={h:d.hoursWorked,o:d.otHours,sal:d.salaryAmt,otA:d.otAmt,ded:0};
-    th+=d.hoursWorked;to+=d.otHours;ts+=d.salaryAmt;toa+=d.otAmt;});
+    th+=d.hoursWorked;to+=d.otHours;ts+=d.salaryAmt;toa+=d.otAmt;
+    if(d.attendanceType==="absent"||d.hoursWorked===0) absentDays++;
+  });
   const dedSnap=await db.collection("deductions").where("employeeId","==",id).where("date",">=",s).where("date","<=",e).orderBy("date").get();
   dedSnap.forEach(doc=>{const d=doc.data();if(!map[d.date])map[d.date]={h:0,o:0,sal:0,otA:0,ded:0};map[d.date].ded+=d.amount;td+=d.amount;});
   let html=`<table class="table table-sm table-bordered table-striped text-center"><thead class="table-dark"><tr><th>Date</th><th>Hours Worked</th><th>OT Hours</th><th>Deductions</th></tr></thead><tbody>`;
@@ -268,12 +321,13 @@ async function showDetails(id,s,e){const emp=employees.find(x=>x.id===id);if(!em
          <p><b>Total Hours Worked:</b> <span class="fw-bold text-primary">${th}</span> → <span class="fw-bold text-success">₹${ts.toFixed(2)}</span></p>
          <p><b>Total OT Hours:</b> <span class="fw-bold text-primary">${to}</span> → <span class="fw-bold text-success">₹${toa.toFixed(2)}</span></p>
          <p><b>Total Deductions:</b> <span class="fw-bold text-danger">₹${td.toFixed(2)}</span></p>
+         <p><b>Absent Days:</b> <span class="fw-bold text-danger">${absentDays}</span></p>
          <p><b>Net Salary:</b> <span class="fw-bold text-success">₹${(ts+toa-td).toFixed(2)}</span></p>`;
   detailsModalTitle.textContent=`Payroll Details of ${emp.name} (${s} to ${e})`;
   detailsContent.innerHTML=html;new bootstrap.Modal(detailsModal).show();
 }
 
-/* Clear Old Entries */
+/* Clear Old Entries same as before */
 async function setEarliestDate(){const ps=await db.collection("payroll").orderBy("date").limit(1).get(),ds=await db.collection("deductions").orderBy("date").limit(1).get();
   let pd=ps.empty?null:ps.docs[0].data().date,dd=ds.empty?null:ds.docs[0].data().date;
   let earliest=pd&&dd?(pd<dd?pd:dd):(pd||dd);if(earliest){clearStartDate.value=earliest;clearEndDate.min=earliest;clearEndDate.value=earliest;}else clearStatus.textContent="No entries";}
