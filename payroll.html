@@ -160,22 +160,31 @@ function todayStr() { return new Date().toISOString().split("T")[0]; }
 // Load Employees inside dropdowns and reload employee table
 async function loadEmployees() {
   toggleLoading(true);
-  const snap = await db.collection("employees").orderBy("name").get();
-  employees = [];
-  let empSel = document.getElementById("empName");
-  let dedSel = document.getElementById("dedEmpName");
-  empSel.innerHTML = "";
-  dedSel.innerHTML = "";
-  snap.forEach(doc => {
-    employees.push({ id: doc.id, ...doc.data() });
-    empSel.add(new Option(doc.data().name, doc.id));
-    dedSel.add(new Option(doc.data().name, doc.id));
-  });
-  document.getElementById("workDate").value = todayStr();
-  document.getElementById("dedDate").value = todayStr();
-  fillDailyPay();
+  try {
+    const snap = await db.collection("employees").orderBy("name").get();
+    employees = [];
+    let empSel = document.getElementById("empName");
+    let dedSel = document.getElementById("dedEmpName");
+    empSel.innerHTML = "";
+    dedSel.innerHTML = "";
+    if (snap.empty) {
+      showToast("No employees found", "warning");
+    }
+    snap.forEach(doc => {
+      employees.push({ id: doc.id, ...doc.data() });
+      empSel.add(new Option(doc.data().name, doc.id));
+      dedSel.add(new Option(doc.data().name, doc.id));
+    });
+    document.getElementById("workDate").value = todayStr();
+    document.getElementById("dedDate").value = todayStr();
+    fillDailyPay();
+  } catch (error) {
+    console.error("Failed to load employees:", error);
+    showToast("Error loading employees: " + error.message, "danger");
+  }
   toggleLoading(false);
 }
+
 
 // Fill daily pay field for chosen employee in daily entry tab
 function fillDailyPay() {
