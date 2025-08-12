@@ -36,7 +36,7 @@
   <div class="tab-content"> 
 
     <!-- Daily Entry -->
-    <div class="tab-pane fade" id="dailyTab">
+    <div class="tab-pane fade show active" id="dailyTab">
       <select id="empName" class="form-select mb-2" onchange="fillDailyPay()"></select>
       <input type="date" id="workDate" class="form-control mb-2">
       <input type="number" step="0.01" id="hoursWorked" class="form-control mb-2" placeholder="Hours Worked">
@@ -72,7 +72,7 @@
     </div>
 
     <!-- Employee Management -->
-    <div class="tab-pane fade show active" id="empMgmtTab">
+    <div class="tab-pane fade" id="empMgmtTab">
       <h5>Add New Employee</h5>
       <input type="text" id="newEmpName" class="form-control mb-2" placeholder="Employee Name">
       <input type="number" id="newEmpPay" class="form-control mb-2" placeholder="Daily Pay">
