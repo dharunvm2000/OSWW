@@ -30,7 +30,9 @@
     <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#dailyTab">Daily Entry</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#dedTab">Deductions</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#sumTab">Weekly Summary</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#empMgmtTab">Employee Mgmt</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#empMgmtTab">Employee Management</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#clearTab">Clear Old Entries</a></li>
+
   </ul>
 
   <div class="tab-content"> 
@@ -85,6 +87,19 @@
           <tbody id="empTableBody"></tbody>
         </table>
       </div>
+    </div>
+
+    <div class="tab-pane fade" id="clearTab">
+      <h5>Clear Old Payroll and Deductions Entries</h5>
+      <label>Start Date (earliest entry):</label>
+      <input type="date" id="clearStartDate" class="form-control mb-2" disabled>
+  
+      <label>End Date:</label>
+      <input type="date" id="clearEndDate" class="form-control mb-2">
+
+      <button class="btn btn-danger w-100 mb-2" onclick="clearOldEntries()">Clear Entries</button>
+
+      <div id="clearStatus" class="text-muted"></div>
     </div>
 
   </div>
@@ -319,38 +334,275 @@ async function loadSummaryUI() {
   toggleLoading(false);
 }
 
-// ===== Print Slip =====
 async function printSlip(empId, weekStart) {
   toggleLoading(true);
-  let weekEnd = new Date(weekStart); weekEnd.setDate(weekEnd.getDate()+6);
-  let weekEndStr = weekEnd.toISOString().split("T")[0];
-  const emp = employees.find(e => e.id === empId);
+  try {
+    let weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    let weekEndStr = weekEnd.toISOString().split("T")[0];
 
-  const ps = await db.collection("payroll").where("employeeId","==",empId)
-    .where("date", ">=", weekStart).where("date", "<=", weekEndStr).get();
-  let hours=0, ot=0, sal=0, otAmt=0;
-  ps.forEach(doc => { const d=doc.data(); hours+=d.hoursWorked; ot+=d.otHours; sal+=d.salaryAmt; otAmt+=d.otAmt; });
+    const emp = employees.find(e => e.id === empId);
+    if (!emp) throw new Error("Employee not found");
 
-  const ds = await db.collection("deductions").where("employeeId","==",empId)
-    .where("date", ">=", weekStart).where("date", "<=", weekEndStr).get();
-  let ded=0; ds.forEach(doc=> ded+=doc.data().amount);
+    // Query payroll for employee in week range
+    const payrollSnap = await db.collection("payroll")
+      .where("employeeId", "==", empId)
+      .where("date", ">=", weekStart)
+      .where("date", "<=", weekEndStr)
+      .get();
 
-  document.getElementById("printContent").innerHTML = `
-    <p><b>Employee:</b> ${emp?emp.name:empId}</p>
-    <p>Worked Hours: ${hours} hrs → ₹${sal.toFixed(2)}</p>
-    <p>OT Hours: ${ot} hrs → ₹${otAmt.toFixed(2)}</p>
-    <hr>
-    <p><b>Total Amount:</b> ₹${(sal+otAmt).toFixed(2)}</p>
-    <p><b>Deductions:</b> ₹${ded.toFixed(2)}</p>
-    <p><b>Net Salary:</b> ₹${(sal+otAmt-ded).toFixed(2)}</p>
-  `;
+    let hours = 0, ot = 0, salary = 0, otAmt = 0;
+    payrollSnap.forEach(doc => {
+      const d = doc.data();
+      hours += d.hoursWorked;
+      ot += d.otHours;
+      salary += d.salaryAmt;
+      otAmt += d.otAmt;
+    });
+
+    // Query deductions for employee in week range
+    const dedSnap = await db.collection("deductions")
+      .where("employeeId", "==", empId)
+      .where("date", ">=", weekStart)
+      .where("date", "<=", weekEndStr)
+      .get();
+
+    let deductions = 0;
+    dedSnap.forEach(doc => deductions += doc.data().amount);
+
+    // Show print modal content
+    document.getElementById("printContent").innerHTML = `
+      <p><b>Employee:</b> ${emp.name}</p>
+      <p>Worked Hours: ${hours} hrs → ₹${salary.toFixed(2)}</p>
+      <p>OT Hours: ${ot} hrs → ₹${otAmt.toFixed(2)}</p>
+      <hr>
+      <p><b>Total Amount:</b> ₹${(salary + otAmt).toFixed(2)}</p>
+      <p><b>Deductions:</b> ₹${deductions.toFixed(2)}</p>
+      <p><b>Net Salary:</b> ₹${(salary + otAmt - deductions).toFixed(2)}</p>
+    `;
+    toggleLoading(false);
+
+    new bootstrap.Modal(document.getElementById("printModal")).show();
+  } catch (error) {
+    toggleLoading(false);
+    console.error("Error loading payroll slip:", error);
+    showToast("Failed to load print data: " + error.message, "danger");
+  }
+
+  // Find earliest date from payroll and deductions collections and set in the start date input
+async function setEarliestDate() {
+  toggleLoading(true);
+  try {
+    // Query earliest date from payroll
+    const payrollSnap = await db.collection("payroll").orderBy("date").limit(1).get();
+    // Query earliest date from deductions
+    const dedSnap = await db.collection("deductions").orderBy("date").limit(1).get();
+
+    let earliestPayrollDate = null;
+    if (!payrollSnap.empty) earliestPayrollDate = payrollSnap.docs[0].data().date;
+    let earliestDeductionDate = null;
+    if (!dedSnap.empty) earliestDeductionDate = dedSnap.docs[0].data().date;
+
+    let earliestDate = earliestPayrollDate && earliestDeductionDate
+      ? (earliestPayrollDate < earliestDeductionDate ? earliestPayrollDate : earliestDeductionDate)
+      : earliestPayrollDate || earliestDeductionDate || null;
+
+    if (earliestDate) {
+      document.getElementById("clearStartDate").value = earliestDate;
+      document.getElementById("clearEndDate").value = earliestDate;
+      document.getElementById("clearEndDate").min = earliestDate;
+    } else {
+      document.getElementById("clearStatus").textContent = "No entries found to clear.";
+    }
+  } catch (error) {
+    showToast("Failed to get earliest date: " + error.message, "danger");
+  }
   toggleLoading(false);
-  new bootstrap.Modal(document.getElementById("printModal")).show();
 }
+
+// Delete documents from given collection within date range in batches
+async function batchDeleteInRange(collectionName, startDate, endDate) {
+  const batchSize = 500;
+  let totalDeleted = 0;
+
+  let query = db.collection(collectionName)
+    .where("date", ">=", startDate)
+    .where("date", "<=", endDate)
+    .limit(batchSize);
+
+  while (true) {
+    const snapshot = await query.get();
+    if (snapshot.empty) break;
+
+    let batch = db.batch();
+    snapshot.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+    totalDeleted += snapshot.size;
+
+    if (snapshot.size < batchSize) break;
+    
+    const lastDoc = snapshot.docs[snapshot.docs.length -1];
+    query = db.collection(collectionName)
+      .where("date", ">=", startDate)
+      .where("date", "<=", endDate)
+      .startAfter(lastDoc)
+      .limit(batchSize);
+  }
+  return totalDeleted;
+}
+
+// Handler for Clear Entries button click
+async function clearOldEntries() {
+  const startDate = document.getElementById("clearStartDate").value;
+  const endDate = document.getElementById("clearEndDate").value;
+
+  if (!startDate || !endDate) {
+    showToast("Select both start and end dates", "danger");
+    return;
+  }
+  if (endDate < startDate) {
+    showToast("End date must be after start date", "danger");
+    return;
+  }
+
+  const statusDiv = document.getElementById("clearStatus");
+  toggleLoading(true);
+  statusDiv.textContent = "Deleting entries...";
+  try {
+    const payrollDeleted = await batchDeleteInRange("payroll", startDate, endDate);
+    statusDiv.textContent = `Deleted ${payrollDeleted} payroll entries...`;
+    const deductionDeleted = await batchDeleteInRange("deductions", startDate, endDate);
+    statusDiv.textContent += ` and ${deductionDeleted} deduction entries.`;
+
+    showToast(`Deleted ${payrollDeleted + deductionDeleted} entries!`, "success");
+
+    // Reset earliest date after deletion
+    await setEarliestDate();
+
+    // Optionally reload your payroll, deduction, or summary data here
+
+  } catch (error) {
+    console.error(error);
+    showToast("Error deleting entries: " + error.message, "danger");
+    statusDiv.textContent = "Error occurred during deletion.";
+  }
+  toggleLoading(false);
+  }
+
+// Find earliest date from payroll and deductions collections and set in the start date input
+async function setEarliestDate() {
+  toggleLoading(true);
+  try {
+    // Query earliest date from payroll
+    const payrollSnap = await db.collection("payroll").orderBy("date").limit(1).get();
+    // Query earliest date from deductions
+    const dedSnap = await db.collection("deductions").orderBy("date").limit(1).get();
+
+    let earliestPayrollDate = null;
+    if (!payrollSnap.empty) earliestPayrollDate = payrollSnap.docs[0].data().date;
+    let earliestDeductionDate = null;
+    if (!dedSnap.empty) earliestDeductionDate = dedSnap.docs[0].data().date;
+
+    let earliestDate = earliestPayrollDate && earliestDeductionDate
+      ? (earliestPayrollDate < earliestDeductionDate ? earliestPayrollDate : earliestDeductionDate)
+      : earliestPayrollDate || earliestDeductionDate || null;
+
+    if (earliestDate) {
+      document.getElementById("clearStartDate").value = earliestDate;
+      document.getElementById("clearEndDate").value = earliestDate;
+      document.getElementById("clearEndDate").min = earliestDate;
+    } else {
+      document.getElementById("clearStatus").textContent = "No entries found to clear.";
+    }
+  } catch (error) {
+    showToast("Failed to get earliest date: " + error.message, "danger");
+  }
+  toggleLoading(false);
+}
+
+// Delete documents from given collection within date range in batches
+async function batchDeleteInRange(collectionName, startDate, endDate) {
+  const batchSize = 500;
+  let totalDeleted = 0;
+
+  let query = db.collection(collectionName)
+    .where("date", ">=", startDate)
+    .where("date", "<=", endDate)
+    .limit(batchSize);
+
+  while (true) {
+    const snapshot = await query.get();
+    if (snapshot.empty) break;
+
+    let batch = db.batch();
+    snapshot.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+    totalDeleted += snapshot.size;
+
+    if (snapshot.size < batchSize) break;
+    
+    const lastDoc = snapshot.docs[snapshot.docs.length -1];
+    query = db.collection(collectionName)
+      .where("date", ">=", startDate)
+      .where("date", "<=", endDate)
+      .startAfter(lastDoc)
+      .limit(batchSize);
+  }
+  return totalDeleted;
+}
+
+// Handler for Clear Entries button click
+async function clearOldEntries() {
+  const startDate = document.getElementById("clearStartDate").value;
+  const endDate = document.getElementById("clearEndDate").value;
+
+  if (!startDate || !endDate) {
+    showToast("Select both start and end dates", "danger");
+    return;
+  }
+  if (endDate < startDate) {
+    showToast("End date must be after start date", "danger");
+    return;
+  }
+
+  const statusDiv = document.getElementById("clearStatus");
+  toggleLoading(true);
+  statusDiv.textContent = "Deleting entries...";
+  try {
+    const payrollDeleted = await batchDeleteInRange("payroll", startDate, endDate);
+    statusDiv.textContent = `Deleted ${payrollDeleted} payroll entries...`;
+    const deductionDeleted = await batchDeleteInRange("deductions", startDate, endDate);
+    statusDiv.textContent += ` and ${deductionDeleted} deduction entries.`;
+
+    showToast(`Deleted ${payrollDeleted + deductionDeleted} entries!`, "success");
+
+    // Reset earliest date after deletion
+    await setEarliestDate();
+
+    // Optionally reload your payroll, deduction, or summary data here
+
+  } catch (error) {
+    console.error(error);
+    showToast("Error deleting entries: " + error.message, "danger");
+    statusDiv.textContent = "Error occurred during deletion.";
+  }
+  toggleLoading(false);
+  }
+
+}
+  
 
 // Init
 loadEmployees();
 document.querySelector('a[href="#empMgmtTab"]').addEventListener("shown.bs.tab", loadEmployeeList);
+document.querySelector('a[href="#clearTab"]').addEventListener("shown.bs.tab", setEarliestDate);
+
 </script>
 </body>
 </html>
