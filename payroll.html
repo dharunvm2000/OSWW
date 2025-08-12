@@ -5,15 +5,19 @@
 <title>Payroll System (Firebase)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
 <style>
-#loadingOverlay {
-  display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-  background:rgba(255,255,255,0.7);
-  z-index:2000; justify-content:center; align-items:center;
-}
-.toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 3000; }
+  body { background: #f8f9fa; }
+  .container { max-width: 900px; margin-top: 20px; }
+  .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 3000; }
+  #loadingOverlay {
+    display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(255,255,255,0.7);
+    z-index:2000; justify-content:center; align-items:center;
+  }
+  /* Fix print modal styling */
+  #printContent p { font-family: monospace; font-size: 1.1em; margin-bottom: 0.3rem;}
 </style>
 </head>
 <body class="bg-light">
@@ -25,16 +29,33 @@
 
   <!-- Menu Tabs -->
   <ul class="nav nav-tabs mb-3" id="menuTabs">
-    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#dailyTab">Daily Entry</a></li>
+    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#empMgmtTab">Employee Mgmt</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#dailyTab">Daily Entry</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#dedTab">Deductions</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#sumTab">Weekly Summary</a></li>
   </ul>
 
   <div class="tab-content">
 
+    <!-- Employee Management -->
+    <div class="tab-pane fade show active" id="empMgmtTab">
+      <h5>Add New Employee</h5>
+      <input type="text" id="newEmpName" class="form-control mb-2" placeholder="Employee Name">
+      <input type="number" id="newEmpPay" class="form-control mb-2" placeholder="Daily Pay">
+      <button class="btn btn-success w-100 mb-3" onclick="addEmployee()">Add Employee</button>
+
+      <h5>Employee List</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered">
+          <thead><tr><th>Name</th><th>Daily Pay</th><th>Actions</th></tr></thead>
+          <tbody id="empTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Daily Entry -->
-    <div class="tab-pane fade show active" id="dailyTab">
-      <select id="empName" class="form-select mb-2"></select>
+    <div class="tab-pane fade" id="dailyTab">
+      <select id="empName" class="form-select mb-2" onchange="fillDailyPay()"></select>
       <input type="date" id="workDate" class="form-control mb-2">
       <input type="number" step="0.01" id="hoursWorked" class="form-control mb-2" placeholder="Hours Worked">
       <input type="number" step="0.01" id="otHours" class="form-control mb-2" placeholder="OT Hours">
@@ -51,9 +72,9 @@
       <button id="btnSaveDed" onclick="addDeductionUI()" class="btn btn-danger w-100">Add Deduction</button>
     </div>
 
-    <!-- Summary -->
+    <!-- Weekly Summary -->
     <div class="tab-pane fade" id="sumTab">
-      <input type="date" id="sumWeekStart" class="form-control mb-2">
+      <input type="date" id="sumWeekStart" class="form-control mb-2" placeholder="Select Week Start">
       <button id="btnLoadSum" onclick="loadSummaryUI()" class="btn btn-primary w-100">Load Summary</button>
       <div class="table-responsive mt-3">
         <table class="table table-bordered">
@@ -73,7 +94,7 @@
 
 <!-- Toast -->
 <div class="toast-container">
-  <div id="liveToast" class="toast text-white">
+  <div id="liveToast" class="toast text-white" role="alert" aria-live="assertive" aria-atomic="true">
     <div class="d-flex">
       <div class="toast-body" id="toastMsg"></div>
       <button type="button" class="btn-close btn-close-white m-auto" data-bs-dismiss="toast"></button>
@@ -82,25 +103,29 @@
 </div>
 
 <!-- Print Modal -->
-<div class="modal fade" id="printModal">
+<div class="modal fade" id="printModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">Payroll Slip</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-header">
+        <h5 class="modal-title">Payroll Slip</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
       <div class="modal-body" id="printContent"></div>
-      <div class="modal-footer"><button onclick="window.print()" class="btn btn-secondary">Print</button></div>
+      <div class="modal-footer">
+        <button onclick="window.print()" class="btn btn-secondary">Print</button>
+      </div>
     </div>
   </div>
 </div>
 
+<!-- Bootstrap & Firebase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
 
 <script>
 // ===== Firebase Config =====
+// Replace this config with your Firebase Console config
 const firebaseConfig = {
   apiKey: "AIzaSyDdjd5LwyoaUMHmlGGy51z5_56_qUL8Pd0",
   authDomain: "payroll-5649d.firebaseapp.com",
@@ -109,158 +134,335 @@ const firebaseConfig = {
   messagingSenderId: "210566811878",
   appId: "1:210566811878:web:6cd0e5db8e623e87d6ab27",
   measurementId: "G-7WJ3S6V1FG"
+  // storageBucket, messagingSenderId, appId, etc. (optional)
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// ===== Globals =====
+// Globals
 let employees = [];
 let toast;
+
 function showToast(msg, type="success") {
-  const t=document.getElementById("liveToast");
-  t.className=`toast align-items-center text-white bg-${type}`;
-  document.getElementById("toastMsg").textContent=msg;
-  if(!toast) toast=new bootstrap.Toast(t,{delay:2000});
+  const t = document.getElementById("liveToast");
+  t.className = `toast align-items-center text-white bg-${type}`;
+  document.getElementById("toastMsg").textContent = msg;
+  if (!toast) toast = new bootstrap.Toast(t, { delay: 3000 });
   toast.show();
 }
-function toggleLoading(show){
-  document.getElementById("loadingOverlay").style.display= show?"flex":"none";
-}
-function todayStr(){ return new Date().toISOString().split("T")[0]; }
 
-// ===== Load Employees =====
-async function loadEmployees(){
-  const snap = await db.collection("employees").get();
+function toggleLoading(show) {
+  document.getElementById("loadingOverlay").style.display = show ? "flex" : "none";
+}
+
+function todayStr() { return new Date().toISOString().split("T")[0]; }
+
+// Load Employees inside dropdowns and reload employee table
+async function loadEmployees() {
+  toggleLoading(true);
+  const snap = await db.collection("employees").orderBy("name").get();
   employees = [];
-  let empSel=document.getElementById("empName");
-  let dedSel=document.getElementById("dedEmpName");
-  empSel.innerHTML=""; dedSel.innerHTML="";
-  snap.forEach(doc=>{
-    employees.push({id:doc.id,...doc.data()});
+  let empSel = document.getElementById("empName");
+  let dedSel = document.getElementById("dedEmpName");
+  empSel.innerHTML = "";
+  dedSel.innerHTML = "";
+  snap.forEach(doc => {
+    employees.push({ id: doc.id, ...doc.data() });
     empSel.add(new Option(doc.data().name, doc.id));
     dedSel.add(new Option(doc.data().name, doc.id));
   });
-  document.getElementById("workDate").value=todayStr();
-  document.getElementById("dedDate").value=todayStr();
+  document.getElementById("workDate").value = todayStr();
+  document.getElementById("dedDate").value = todayStr();
   fillDailyPay();
-}
-function fillDailyPay(){
-  let id=document.getElementById("empName").value;
-  let e=employees.find(emp=>emp.id===id);
-  document.getElementById("dailyPay").value = e? e.dailyPay:"";
+  toggleLoading(false);
 }
 
-// ===== Add Daily Entry =====
-async function addDailyEntryUI(){
+// Fill daily pay field for chosen employee in daily entry tab
+function fillDailyPay() {
+  let id = document.getElementById("empName").value;
+  let emp = employees.find(e => e.id === id);
+  document.getElementById("dailyPay").value = emp ? emp.dailyPay : "";
+}
+
+// === Employee Management Functions ===
+async function addEmployee() {
+  const name = document.getElementById("newEmpName").value.trim();
+  const pay = parseFloat(document.getElementById("newEmpPay").value);
+  if (!name || isNaN(pay)) {
+    showToast("Enter valid name & pay", "danger");
+    return;
+  }
   toggleLoading(true);
-  let id=document.getElementById("empName").value;
-  let date=document.getElementById("workDate").value;
-  let hours=parseFloat(document.getElementById("hoursWorked").value)||0;
-  let ot=parseFloat(document.getElementById("otHours").value)||0;
-  let emp=employees.find(e=>e.id===id);
-  if(!emp){ toggleLoading(false); showToast("No employee","danger"); return;}
-  let salAmt=(hours*emp.dailyPay)/8;
-  let otAmt=(ot*emp.dailyPay)/8;
+  await db.collection("employees").add({ name, dailyPay: pay });
+  toggleLoading(false);
+  showToast("Employee added", "success");
+  document.getElementById("newEmpName").value = "";
+  document.getElementById("newEmpPay").value = "";
+  loadEmployeeList();
+  loadEmployees();
+}
+
+async function loadEmployeeList() {
+  const tbody = document.getElementById("empTableBody");
+  tbody.innerHTML = "";
+  const snap = await db.collection("employees").orderBy("name").get();
+  if (snap.empty) {
+    tbody.innerHTML = "<tr><td colspan='3' class='text-center'>No employees</td></tr>";
+    return;
+  }
+  snap.forEach(doc => {
+    const d = doc.data();
+    const row = `
+      <tr>
+        <td><input type="text" value="${d.name}" id="name_${doc.id}" class="form-control form-control-sm"></td>
+        <td><input type="number" value="${d.dailyPay}" id="pay_${doc.id}" class="form-control form-control-sm" step="0.01"></td>
+        <td>
+          <button class="btn btn-sm btn-primary" onclick="updateEmployee('${doc.id}')">Save</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteEmployee('${doc.id}')">Del</button>
+        </td>
+      </tr>
+    `;
+    tbody.insertAdjacentHTML("beforeend", row);
+  });
+}
+
+async function updateEmployee(empId) {
+  const name = document.getElementById(`name_${empId}`).value.trim();
+  const pay = parseFloat(document.getElementById(`pay_${empId}`).value);
+  if (!name || isNaN(pay)) {
+    showToast("Invalid data", "danger");
+    return;
+  }
+  toggleLoading(true);
+  await db.collection("employees").doc(empId).update({ name, dailyPay: pay });
+  toggleLoading(false);
+  showToast("Employee updated", "success");
+  loadEmployees();
+}
+
+async function deleteEmployee(empId) {
+  if (!confirm("Delete this employee?")) return;
+  toggleLoading(true);
+  await db.collection("employees").doc(empId).delete();
+  toggleLoading(false);
+  showToast("Employee deleted", "warning");
+  loadEmployeeList();
+  loadEmployees();
+}
+
+// === Daily Entry ===
+async function addDailyEntryUI() {
+  toggleLoading(true);
+  let id = document.getElementById("empName").value;
+  let date = document.getElementById("workDate").value;
+  let hours = parseFloat(document.getElementById("hoursWorked").value) || 0;
+  let ot = parseFloat(document.getElementById("otHours").value) || 0;
+  const emp = employees.find(e => e.id === id);
+  if (!emp) {
+    toggleLoading(false);
+    showToast("No such employee", "danger");
+    return;
+  }
+  let salAmt = (hours * emp.dailyPay) / 8;
+  let otAmt = (ot * emp.dailyPay) / 8;
+
+  // Save to Firestore
   await db.collection("payroll").add({
-    employeeId:id, date, hoursWorked:hours, otHours:ot,
-    salaryAmt:salAmt, otAmt:otAmt
+    employeeId: id,
+    date: date,
+    hoursWorked: hours,
+    otHours: ot,
+    salaryAmt: salAmt,
+    otAmt: otAmt
   });
   toggleLoading(false);
-  showToast("Daily entry saved","success");
+  showToast("Daily entry saved", "success");
 }
 
-// ===== Add Deduction =====
-async function addDeductionUI(){
+// === Deduction Entry ===
+async function addDeductionUI() {
   toggleLoading(true);
-  let id=document.getElementById("dedEmpName").value;
-  let date=document.getElementById("dedDate").value;
-  let amt=parseFloat(document.getElementById("dedAmount").value)||0;
-  let reason=document.getElementById("dedReason").value||"";
+  let id = document.getElementById("dedEmpName").value;
+  let date = document.getElementById("dedDate").value;
+  let amt = parseFloat(document.getElementById("dedAmount").value) || 0;
+  let reason = document.getElementById("dedReason").value || "";
+
   await db.collection("deductions").add({
-    employeeId:id, date, amount:amt, reason
+    employeeId: id,
+    date: date,
+    amount: amt,
+    reason: reason
   });
   toggleLoading(false);
-  showToast("Deduction added","warning");
+  showToast("Deduction added", "warning");
 }
 
-// ===== Load Summary =====
-async function loadSummaryUI(){
-  let weekStart=document.getElementById("sumWeekStart").value;
-  if(!weekStart){ showToast("Select week start","danger"); return;}
+// === Weekly Summary ===
+async function loadSummaryUI() {
+  let weekStart = document.getElementById("sumWeekStart").value;
+  if (!weekStart) {
+    showToast("Select week start", "danger");
+    return;
+  }
+
   toggleLoading(true);
-  let weekEnd=new Date(weekStart); weekEnd.setDate(weekEnd.getDate()+6);
+  let weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  weekEnd = weekEnd.toISOString().split("T")[0];
+
+  // Query payroll entries
   const payrollSnap = await db.collection("payroll")
     .where("date", ">=", weekStart)
-    .where("date", "<=", weekEnd.toISOString().split("T")[0])
+    .where("date", "<=", weekEnd)
     .get();
-  if(payrollSnap.empty){ toggleLoading(false); showToast("No data","danger"); return; }
-  let summary={};
-  payrollSnap.forEach(doc=>{
-    const d=doc.data();
-    if(!summary[d.employeeId]) summary[d.employeeId]={hours:0,otHours:0,salary:0,ot:0};
-    summary[d.employeeId].hours +=d.hoursWorked;
+
+  if (payrollSnap.empty) {
+    toggleLoading(false);
+    showToast("No payroll data found", "warning");
+    document.getElementById("summaryBody").innerHTML = "";
+    return;
+  }
+
+  let summary = {};
+  payrollSnap.forEach(doc => {
+    const d = doc.data();
+    if (!(d.employeeId in summary)) summary[d.employeeId] = { hours: 0, otHours: 0, salary: 0, ot: 0 };
+    summary[d.employeeId].hours += d.hoursWorked;
     summary[d.employeeId].otHours += d.otHours;
     summary[d.employeeId].salary += d.salaryAmt;
     summary[d.employeeId].ot += d.otAmt;
   });
+
+  // Query deductions
   const dedSnap = await db.collection("deductions")
     .where("date", ">=", weekStart)
-    .where("date", "<=", weekEnd.toISOString().split("T")[0])
+    .where("date", "<=", weekEnd)
     .get();
-  let dedMap={};
-  dedSnap.forEach(doc=>{
-    const d=doc.data();
-    dedMap[d.employeeId] = (dedMap[d.employeeId]||0) + d.amount;
+
+  let dedMap = {};
+  dedSnap.forEach(doc => {
+    const d = doc.data();
+    dedMap[d.employeeId] = (dedMap[d.employeeId] || 0) + d.amount;
   });
-  let tbody=document.getElementById("summaryBody");
-  tbody.innerHTML="";
-  for(const empId in summary){
-    let e=employees.find(x=>x.id===empId);
-    let ded=dedMap[empId]||0;
-    let net=summary[empId].salary+summary[empId].ot-ded;
-    let tr=`<tr>
-      <td>${e?e.name:empId}</td>
-      <td>${summary[empId].hours.toFixed(2)}</td>
-      <td>${summary[empId].otHours.toFixed(2)}</td>
-      <td>${summary[empId].salary.toFixed(2)}</td>
-      <td>${summary[empId].ot.toFixed(2)}</td>
-      <td>${ded.toFixed(2)}</td>
-      <td>${net.toFixed(2)}</td>
-      <td><button class='btn btn-sm btn-outline-secondary' onclick="printSlip('${empId}','${weekStart}')">Print</button></td>
-    </tr>`;
-    tbody.insertAdjacentHTML("beforeend",tr);
+
+  // Render summary table rows
+  let tbody = document.getElementById("summaryBody");
+  tbody.innerHTML = "";
+
+  for (let empId in summary) {
+    let emp = employees.find(e => e.id === empId);
+    let ded = dedMap[empId] || 0;
+    let net = summary[empId].salary + summary[empId].ot - ded;
+
+    let tr = document.createElement("tr");
+
+    // Employee name
+    let tdEmp = document.createElement("td");
+    tdEmp.textContent = emp ? emp.name : empId;
+    tr.appendChild(tdEmp);
+
+    // Total Hours
+    let tdHours = document.createElement("td");
+    tdHours.textContent = summary[empId].hours.toFixed(2);
+    tr.appendChild(tdHours);
+
+    // Total OT Hours
+    let tdOtHours = document.createElement("td");
+    tdOtHours.textContent = summary[empId].otHours.toFixed(2);
+    tr.appendChild(tdOtHours);
+
+    // Salary Amount
+    let tdSal = document.createElement("td");
+    tdSal.textContent = summary[empId].salary.toFixed(2);
+    tr.appendChild(tdSal);
+
+    // OT Amount
+    let tdOt = document.createElement("td");
+    tdOt.textContent = summary[empId].ot.toFixed(2);
+    tr.appendChild(tdOt);
+
+    // Deductions
+    let tdDed = document.createElement("td");
+    tdDed.textContent = ded.toFixed(2);
+    tr.appendChild(tdDed);
+
+    // Net Salary
+    let tdNet = document.createElement("td");
+    tdNet.textContent = net.toFixed(2);
+    tr.appendChild(tdNet);
+
+    // Action Button (Print)
+    let tdAct = document.createElement("td");
+    let btnPrint = document.createElement("button");
+    btnPrint.className = "btn btn-sm btn-outline-secondary";
+    btnPrint.textContent = "Print";
+    btnPrint.addEventListener("click", () => printSlip(empId, weekStart));
+    tdAct.appendChild(btnPrint);
+    tr.appendChild(tdAct);
+
+    tbody.appendChild(tr);
   }
+
   toggleLoading(false);
 }
 
-// ===== Print Slip =====
-async function printSlip(empId, weekStart){
-  let weekEnd=new Date(weekStart); weekEnd.setDate(weekEnd.getDate()+6);
-  const e=employees.find(x=>x.id===empId);
-  const ps=await db.collection("payroll").where("employeeId","==",empId)
+// === Print payslip modal ===
+async function printSlip(empId, weekStart) {
+  toggleLoading(true);
+  let weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  weekEnd = weekEnd.toISOString().split("T")[0];
+
+  let emp = employees.find(e => e.id === empId);
+
+  // Fetch payroll entries for employee
+  let payrollSnap = await db.collection("payroll")
+    .where("employeeId", "==", empId)
     .where("date", ">=", weekStart)
-    .where("date", "<=", weekEnd.toISOString().split("T")[0]).get();
-  let hours=0,ot=0,sal=0,otA=0;
-  ps.forEach(doc=>{
-    const d=doc.data();
-    hours+=d.hoursWorked; ot+=d.otHours; sal+=d.salaryAmt; otA+=d.otAmt;
+    .where("date", "<=", weekEnd)
+    .get();
+
+  let hours = 0, ot = 0, salary = 0, otAmt = 0;
+  payrollSnap.forEach(doc => {
+    let d = doc.data();
+    hours += d.hoursWorked;
+    ot += d.otHours;
+    salary += d.salaryAmt;
+    otAmt += d.otAmt;
   });
-  const ds=await db.collection("deductions").where("employeeId","==",empId)
+
+  // Fetch deductions for employee
+  let dedSnap = await db.collection("deductions")
+    .where("employeeId", "==", empId)
     .where("date", ">=", weekStart)
-    .where("date", "<=", weekEnd.toISOString().split("T")[0]).get();
-  let ded=0; ds.forEach(doc=> ded+=doc.data().amount);
-  document.getElementById("printContent").innerHTML=`
-    <p><b>Employee:</b> ${e?e.name:empId}</p>
-    <p>Worked Hours: ${hours} → ₹${sal.toFixed(2)}</p>
-    <p>OT Hours: ${ot} → ₹${otA.toFixed(2)}</p>
-    <p><b>Total:</b> ₹${(sal+otA).toFixed(2)}</p>
+    .where("date", "<=", weekEnd)
+    .get();
+
+  let ded = 0;
+  dedSnap.forEach(doc => { ded += doc.data().amount; });
+
+  // Build modal content
+  let html = `
+    <p><b>Employee:</b> ${emp ? emp.name : empId}</p>
+    <p>Worked Hours: ${hours} hrs → ₹${salary.toFixed(2)}</p>
+    <p>OT Hours: ${ot} hrs → ₹${otAmt.toFixed(2)}</p>
+    <hr>
+    <p><b>Total Amount:</b> ₹${(salary + otAmt).toFixed(2)}</p>
     <p><b>Deductions:</b> ₹${ded.toFixed(2)}</p>
-    <p><b>Net Salary:</b> ₹${(sal+otA-ded).toFixed(2)}</p>`;
-  new bootstrap.Modal(document.getElementById("printModal")).show();
+    <p><b>Net Salary:</b> ₹${(salary + otAmt - ded).toFixed(2)}</p>
+  `;
+  document.getElementById("printContent").innerHTML = html;
+  toggleLoading(false);
+
+  let modal = new bootstrap.Modal(document.getElementById("printModal"));
+  modal.show();
 }
 
-// Init
+// Initialize
 loadEmployees();
+
+// Reload employee list in Employee Management tab when it becomes visible
+document.querySelector('a[href="#empMgmtTab"]').addEventListener("shown.bs.tab", loadEmployeeList);
 </script>
 </body>
 </html>
