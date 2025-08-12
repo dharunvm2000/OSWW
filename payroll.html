@@ -32,23 +32,7 @@
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#sumTab">Weekly Summary</a></li>
   </ul>
 
-  <div class="tab-content">
-
-    <!-- Employee Management -->
-    <div class="tab-pane fade show active" id="empMgmtTab">
-      <h5>Add New Employee</h5>
-      <input type="text" id="newEmpName" class="form-control mb-2" placeholder="Employee Name">
-      <input type="number" id="newEmpPay" class="form-control mb-2" placeholder="Daily Pay">
-      <button class="btn btn-success w-100 mb-3" onclick="addEmployee()">Add Employee</button>
-
-      <h5>Employee List</h5>
-      <div class="table-responsive">
-        <table class="table table-bordered">
-          <thead><tr><th>Name</th><th>Daily Pay</th><th>Actions</th></tr></thead>
-          <tbody id="empTableBody"></tbody>
-        </table>
-      </div>
-    </div>
+  <div class="tab-content"> 
 
     <!-- Daily Entry -->
     <div class="tab-pane fade" id="dailyTab">
@@ -82,6 +66,22 @@
             </tr>
           </thead>
           <tbody id="summaryBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Employee Management -->
+    <div class="tab-pane fade show active" id="empMgmtTab">
+      <h5>Add New Employee</h5>
+      <input type="text" id="newEmpName" class="form-control mb-2" placeholder="Employee Name">
+      <input type="number" id="newEmpPay" class="form-control mb-2" placeholder="Daily Pay">
+      <button class="btn btn-success w-100 mb-3" onclick="addEmployee()">Add Employee</button>
+
+      <h5>Employee List</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered">
+          <thead><tr><th>Name</th><th>Daily Pay</th><th>Actions</th></tr></thead>
+          <tbody id="empTableBody"></tbody>
         </table>
       </div>
     </div>
