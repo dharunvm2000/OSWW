@@ -340,6 +340,10 @@ async function clearOldEntries(){if(!clearEndDate.value)return showToast("Select
 
 /* Init */
 loadEmployees();
+  // As soon as page is loaded, run setHoursWorked to fill 8 for "Full Day"
+document.addEventListener("DOMContentLoaded", () => {
+  setHoursWorked();
+});
 document.querySelector('a[href="#dailyTab"]').addEventListener("shown.bs.tab",()=> loadDailyEntries());
 document.querySelector('a[href="#dedTab"]').addEventListener("shown.bs.tab",()=> loadDeductionEntries());
 document.querySelector('a[href="#empMgmtTab"]').addEventListener("shown.bs.tab",loadEmployeeList);
