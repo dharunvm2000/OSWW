@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Payroll System</title>
+<title>Payroll System (Mobile Optimized)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
@@ -12,6 +12,24 @@
   .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 3000; }
   #loadingOverlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%;
                     background:rgba(255,255,255,0.7); z-index:2000; justify-content:center; align-items:center; }
+  /* Mobile card view for tables */
+  @media (max-width: 768px) {
+    .table thead { display: none; }
+    .table tbody tr { display: block; margin-bottom: 0.75rem; border: 1px solid #dee2e6; border-radius: 0.25rem; background: #fff; padding: 0.5rem; }
+    .table tbody td { display: flex; justify-content: space-between; border: none !important; padding: 0.4rem; font-size: 0.9rem; }
+    .table tbody td::before {
+      content: attr(data-label);
+      font-weight: 600;
+      color: #495057;
+      flex-basis: 50%;
+      text-align: left;
+    }
+    .input-group, .form-control, .form-select, .btn { font-size: 0.95rem; }
+  }
+  .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .sticky-header thead th { position: sticky; top: 0; background: #f8f9fa; z-index: 2; }
+  .nav-tabs { overflow-x: auto; flex-wrap: nowrap; }
+  .nav-tabs .nav-item { white-space: nowrap; }
 </style>
 </head>
 <body class="bg-light">
@@ -38,13 +56,13 @@
       <select id="empName" class="form-select mb-2" onchange="fillDailyPay()"></select>
       <input type="date" id="workDate" class="form-control mb-2">
       
-      <!-- Work Type Dropdown + Hours Worked -->
+      <!-- Work Type + Hours -->
       <div class="input-group mb-2">
-        <select id="hoursType" class="form-select" onchange="setHoursWorked()">          
+        <select id="hoursType" class="form-select" onchange="setHoursWorked()">
+          <option value="manual">Manual</option>
           <option value="full" selected>Full Day</option>
           <option value="half">Half Day</option>
           <option value="absent">Absent</option>
-          <option value="manual">Manual</option>
         </select>
         <input type="number" id="hoursWorked" step="0.01" class="form-control" placeholder="Hours Worked">
       </div>
@@ -55,7 +73,7 @@
 
       <h5 class="mt-4">Recent Daily Entries</h5>
       <div class="table-responsive">
-        <table class="table table-sm table-bordered" id="dailyTable">
+        <table class="table table-sm table-bordered sticky-header" id="dailyTable">
           <thead class="table-light">
             <tr><th>Date</th><th>Employee</th><th>Work Type</th><th>Hours</th><th>OT</th><th>Salary</th><th>OT Amt</th><th>Actions</th></tr>
           </thead>
@@ -78,7 +96,7 @@
 
       <h5 class="mt-4">Recent Deductions</h5>
       <div class="table-responsive">
-        <table class="table table-sm table-bordered" id="dedTable">
+        <table class="table table-sm table-bordered sticky-header" id="dedTable">
           <thead class="table-light">
             <tr><th>Date</th><th>Employee</th><th>Amount</th><th>Reason</th><th>Actions</th></tr>
           </thead>
@@ -99,8 +117,10 @@
       <input type="date" id="sumEndDate" class="form-control mb-2">
       <button onclick="loadSummaryUI()" class="btn btn-primary w-100 mb-2">Load Summary</button>
       <div class="table-responsive">
-        <table class="table table-bordered">
-          <thead><tr><th>Emp</th><th>Total Hrs</th><th>OT Hrs</th><th>Salary</th><th>OT</th><th>Deductions</th><th>Net</th><th>Action</th></tr></thead>
+        <table class="table table-bordered sticky-header">
+          <thead>
+            <tr><th>Emp</th><th>Total Hrs</th><th>OT Hrs</th><th>Salary</th><th>OT</th><th>Deductions</th><th>Net</th><th>Action</th></tr>
+          </thead>
           <tbody id="summaryBody"></tbody>
         </table>
       </div>
