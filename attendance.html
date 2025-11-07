@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Weekly Salary Calculator & Attendance Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      color-scheme: light;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --border: #e5e7eb;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --bg: #f9fafb;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 24px; }
+    h2 { margin: 0 0 24px; font-size: 28px; font-weight: 600; }
+    .layout { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+    .nav-tabs { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+    .tab-btn { border: none; border-radius: 999px; padding: 10px 20px; cursor: pointer; font-weight: 600; font-size: 15px; background: var(--accent-soft); color: var(--accent); transition: background .2s ease, color .2s ease, transform .2s ease, box-shadow .2s ease; }
+    .tab-btn.active { background: var(--accent); color: #fff; box-shadow: 0 12px 22px rgba(37, 99, 235, 0.24); transform: translateY(-1px); }
+    .tab-btn:not(.active):hover { background: rgba(37, 99, 235, 0.1); }
+    .card { background: #fff; border: 1px solid var(--border); border-radius: 20px; padding: 24px; box-shadow: 0 18px 32px rgba(15, 23, 42, 0.08); }
+    .card h3 { margin: 0 0 16px; font-size: 20px; font-weight: 600; }
+    .card p { margin: 0 0 16px; color: var(--muted); }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; align-items: end; }
+    label { display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+    label span { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    input, select { width: 100%; padding: 11px 14px; font-size: 15px; border: 1px solid var(--border); border-radius: 14px; transition: border-color .2s ease, box-shadow .2s ease; background: #fff; color: var(--text); }
+    input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18); }
+    .form-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 18px; border-radius: 999px; border: none; cursor: pointer; font-weight: 600; font-size: 15px; transition: transform .2s ease, box-shadow .2s ease; }
+    .btn-primary { background: var(--accent); color: #fff; box-shadow: 0 12px 20px rgba(37, 99, 235, 0.2); }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 24px rgba(37, 99, 235, 0.26); }
+    .btn-secondary { background: var(--accent-soft); color: var(--accent); }
+    .btn-secondary:hover { transform: translateY(-1px); }
+    .btn-icon { width: 40px; height: 40px; border-radius: 50%; padding: 0; font-size: 18px; line-height: 1; }
+    .date-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .date-controls input[type="date"] { min-width: 170px; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: var(--accent-soft); color: var(--accent); font-weight: 600; border-bottom: 1px solid var(--border); padding: 14px 10px; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; }
+    tbody td { padding: 14px 10px; border-bottom: 1px solid rgba(226, 232, 240, 0.7); font-size: 14px; text-align: center; vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody td.name { text-align: left; font-weight: 600; font-size: 15px; color: var(--text); }
+    .status-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; border-radius: 10px; font-weight: 600; }
+    .status-present { background: #dcf7e4; color: #166534; }
+    .status-halfday { background: #fef3c7; color: #92400e; }
+    .status-absent { background: #fee2e2; color: #b91c1c; }
+    .cell-meta { margin-top: 6px; display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+    .cell-meta span { display: inline-flex; justify-content: center; }
+    .highlight-day { box-shadow: inset 0 0 0 2px rgba(37, 99, 235, 0.35); border-radius: 16px; padding: 10px 6px; }
+    .empty-state { text-align: center; padding: 40px 0; color: var(--muted); font-size: 15px; }
+    .table-card { overflow-x: auto; }
+    .table-card table { min-width: 980px; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+    .card-header-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .card-header h3 { margin: 0; }
+    .chip { display: inline-flex; align-items: center; gap: 8px; background: var(--accent-soft); color: var(--accent); padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+    .employee-list { margin-top: 28px; }
+    .employee-list table { width: 100%; border-collapse: collapse; }
+    .employee-list th, .employee-list td { padding: 12px 10px; border-bottom: 1px solid rgba(226, 232, 240, 0.7); text-align: left; font-size: 14px; }
+    .employee-list th { text-transform: uppercase; letter-spacing: 0.05em; font-size: 12px; color: var(--muted); }
+    @media (max-width: 720px) {
+      body { padding: 20px 16px; }
+      h2 { font-size: 24px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .date-controls { width: 100%; }
+      .date-controls input[type="date"] { flex: 1 1 150px; }
+      .btn { width: 100%; }
+      .btn-icon { width: 44px; height: 44px; }
+      .form-actions { width: 100%; }
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --border: #334155; --bg: #0f172a; --text: #e2e8f0; --muted: #94a3b8; --accent-soft: rgba(37, 99, 235, 0.15); }
+      body { background: var(--bg); color: var(--text); }
+      .card { background: #0b1a2d; border-color: var(--border); box-shadow: 0 18px 32px rgba(2, 6, 23, 0.65); }
+      input, select { background: #0f203a; color: var(--text); border-color: #1e293b; }
+      thead th { background: rgba(37, 99, 235, 0.18); color: #bfdbfe; }
+      tbody td { border-bottom-color: rgba(51, 65, 85, 0.6); }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <h2>Weekly Salary & Attendance Dashboard</h2>
+
+    <nav class="nav-tabs">
+      <button type="button" class="tab-btn active" data-tab="attendance" onclick="setActiveTab('attendance')">Attendance</button>
+      <button type="button" class="tab-btn" data-tab="employees" onclick="setActiveTab('employees')">Employees</button>
+    </nav>
+
+    <section class="card" data-tab-panel="attendance">
+      <h3>Daily Attendance & Advances</h3>
+      <p>Select a date, move backward or forward, and capture attendance, overtime, and advances for a single day.</p>
+      <form id="dailyEntryForm" onsubmit="saveDailyRecord(event)">
+        <div class="form-grid">
+          <label>
+            <span>Date</span>
+            <div class="date-controls">
+              <button type="button" class="btn btn-secondary btn-icon" onclick="changeEntryDate(-1)" aria-label="Previous day">&#8592;</button>
+              <input type="date" id="entryDate" required>
+              <button type="button" class="btn btn-secondary btn-icon" onclick="changeEntryDate(1)" aria-label="Next day">&#8594;</button>
+              <button type="button" class="btn btn-secondary" onclick="setToday()">Today</button>
+            </div>
+          </label>
+          <label>
+            <span>Employee</span>
+            <select id="employeeSelect" required></select>
+          </label>
+          <label>
+            <span>Attendance</span>
+            <select id="entryAttendance">
+              <option value="X">Present</option>
+              <option value="/">Half Day</option>
+              <option value="a">Absent</option>
+            </select>
+          </label>
+          <label>
+            <span>Morning OT (hrs)</span>
+            <input type="number" id="entryMrngOt" min="0" max="12" step="0.5" placeholder="0">
+          </label>
+          <label>
+            <span>Evening OT (hrs)</span>
+            <input type="number" id="entryEvngOt" min="0" max="12" step="0.5" placeholder="0">
+          </label>
+          <label>
+            <span>Advance Paid</span>
+            <input type="number" id="entryAdvance" min="0" step="0.01" placeholder="₹0.00">
+          </label>
+        </div>
+        <div class="form-actions">
+          <button id="saveDailyBtn" type="submit" class="btn btn-primary">Save Day Record</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card table-card" data-tab-panel="attendance">
+      <div class="card-header">
+        <div class="card-header-left">
+          <h3>Week At A Glance</h3>
+          <span id="weekRangeLabel" class="chip"></span>
+        </div>
+        <button type="button" class="btn btn-secondary" data-pdf-hide="true" onclick="downloadWeekPdf()">Download PDF</button>
+      </div>
+      <table id="attendanceTable">
+        <thead id="attendanceHead"></thead>
+    <tbody id="attendanceBody"></tbody>
+  </table>
+    </section>
+
+    <section class="card" data-tab-panel="employees" hidden>
+      <h3>Employee Management</h3>
+      <p>Add or remove employees. Salaries apply to all future attendance entries.</p>
+      <form id="addEmployeeForm" onsubmit="addEmployee(event)">
+        <div class="form-grid">
+          <label>
+            <span>Employee Name</span>
+            <input type="text" id="newName" placeholder="Enter emp name" required>
+          </label>
+          <label>
+            <span>Basic Salary (Per Day)</span>
+            <input type="number" id="newSalary" min="0" step="0.01" placeholder="₹" required>
+          </label>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Add Employee</button>
+        </div>
+      </form>
+      <div id="employeeList" class="employee-list"></div>
+    </section>
+  </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" referrerpolicy="no-referrer"></script>
+<script>
+// Data store
+const employees = [];
+let selectedEmployeeId = '';
+
+function toISO(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function parseISO(dateString) {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function getStartOfWeek(date) {
+  const start = new Date(date);
+  const day = start.getDay();
+  start.setHours(0, 0, 0, 0);
+  const diff = (day + 6) % 7; // Monday start
+  start.setDate(start.getDate() - diff);
+  return start;
+}
+
+function getWeekDates(startDate) {
+  const base = new Date(startDate);
+  const week = [];
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(base);
+    d.setDate(base.getDate() + i);
+    week.push(d);
+  }
+  return week;
+}
+
+function formatWeekday(date) {
+  const weekday = date.toLocaleDateString(undefined, { weekday: 'short' });
+  const monthDay = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return `${weekday}<br>${monthDay}`;
+}
+
+function formatCurrency(value) {
+  return Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatNumber(value) {
+  if (value === 0) return '0';
+  if (Number.isInteger(value)) return String(value);
+  return Number(value).toFixed(1);
+}
+
+let currentDate = new Date();
+let currentWeekStart = getStartOfWeek(currentDate);
+
+function calculateSummary(emp, weekDates) {
+  let totalDays = 0;
+  let totalOt = 0;
+  let totalAdvances = 0;
+  weekDates.forEach(date => {
+    const iso = toISO(date);
+    const record = emp.records[iso];
+    if (!record) return;
+    if (record.attendance === 'X') totalDays += 1;
+    else if (record.attendance === '/') totalDays += 0.5;
+    totalOt += Number(record.mrngOt || 0) + Number(record.evngOt || 0);
+    totalAdvances += Number(record.advance || 0);
+  });
+  const otAmount = (emp.salary / 8) * totalOt;
+  const gross = emp.salary * totalDays + otAmount;
+  const netSalary = gross - totalAdvances;
+  return {
+    totalDays,
+    totalOt,
+    totalAdvances,
+    gross,
+    netSalary
+  };
+}
+
+function updateWeekLabel(weekDates) {
+  const label = document.getElementById('weekRangeLabel');
+  const start = weekDates[0].toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  const end = weekDates[weekDates.length - 1].toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  label.textContent = `${start} — ${end}`;
+}
+
+function setActiveTab(tabName) {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    const isActive = btn.dataset.tab === tabName;
+    btn.classList.toggle('active', isActive);
+  });
+  document.querySelectorAll('[data-tab-panel]').forEach(panel => {
+    const matches = panel.dataset.tabPanel === tabName;
+    if (matches) {
+      panel.removeAttribute('hidden');
+    } else {
+      panel.setAttribute('hidden', '');
+    }
+  });
+}
+
+function renderTable() {
+  const head = document.getElementById('attendanceHead');
+  const body = document.getElementById('attendanceBody');
+  const selectedDateValue = document.getElementById('entryDate').value;
+  const selectedISO = selectedDateValue || toISO(currentDate);
+  const weekDates = getWeekDates(currentWeekStart);
+  updateWeekLabel(weekDates);
+
+  head.innerHTML = `
+    <tr>
+      <th>Employee</th>
+      <th>Basic Salary</th>
+      ${weekDates.map(date => `<th>${formatWeekday(date)}</th>`).join('')}
+      <th>Total Days</th>
+      <th>OT Hours</th>
+      <th>Gross Salary</th>
+      <th>Total Advances</th>
+      <th>Net Salary</th>
+      <th>Actions</th>
+    </tr>
+  `;
+
+  if (!employees.length) {
+    body.innerHTML = `<tr><td class="empty-state" colspan="${weekDates.length + 8}">Add employees to begin tracking attendance.</td></tr>`;
+    return;
+  }
+
+  body.innerHTML = employees.map((emp, idx) => {
+    const summary = calculateSummary(emp, weekDates);
+    const dayCells = weekDates.map(date => {
+      const iso = toISO(date);
+      const record = emp.records[iso];
+      const attendance = record ? record.attendance : '';
+      let badgeClass = '';
+      if (attendance === 'X') badgeClass = 'status-present';
+      else if (attendance === '/') badgeClass = 'status-halfday';
+      else if (attendance === 'a') badgeClass = 'status-absent';
+      const highlight = iso === selectedISO ? ' highlight-day' : '';
+      const mrngOt = record ? Number(record.mrngOt || 0) : 0;
+      const evngOt = record ? Number(record.evngOt || 0) : 0;
+      const advance = record ? Number(record.advance || 0) : 0;
+      const displayAttendance = attendance ? attendance : '-';
+      return `
+        <td class="${highlight}">
+          <div class="status-badge ${badgeClass}">${displayAttendance}</div>
+          <div class="cell-meta">
+            <span>OT M: ${mrngOt}</span>
+            <span>OT E: ${evngOt}</span>
+            <span>Adv: ${formatCurrency(advance)}</span>
+          </div>
+          </td>
+      `;
+    }).join('');
+
+    return `
+      <tr>
+        <td class="name">${emp.name}</td>
+        <td>${formatCurrency(emp.salary)}</td>
+        ${dayCells}
+        <td>${formatNumber(summary.totalDays)}</td>
+        <td>${formatNumber(summary.totalOt)}</td>
+        <td>${formatCurrency(summary.gross)}</td>
+        <td>${formatCurrency(summary.totalAdvances)}</td>
+        <td>${formatCurrency(summary.netSalary)}</td>
+        <td>
+          <button class="btn btn-secondary" onclick="deleteEmployee(${idx})">Delete</button>
+      </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderEmployeeList() {
+  const container = document.getElementById('employeeList');
+  if (!container) return;
+  if (!employees.length) {
+    container.innerHTML = '<p class="empty-state">No team members yet. Add an employee to get started.</p>';
+    return;
+  }
+
+  const rows = employees.map((emp, idx) => `
+    <tr>
+      <td>${emp.name}</td>
+      <td>${formatCurrency(emp.salary)}</td>
+      <td>${Object.keys(emp.records).length}</td>
+      <td>
+        <button type="button" class="btn btn-secondary" onclick="deleteEmployee(${idx})">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+
+  container.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Basic Salary</th>
+          <th>Recorded Days</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+function buildExportTable(weekDates) {
+  const container = document.createElement('div');
+  container.style.cssText = 'font-family: Arial, sans-serif; padding: 20px; background: #ffffff; color: #000; width: 1200px; min-width: 1200px;';
+  
+  const title = document.createElement('h2');
+  title.textContent = 'Attendance Summary';
+  title.style.cssText = 'margin: 0 0 10px; font-size: 24px; font-weight: bold; color: #1f2937;';
+  container.appendChild(title);
+
+  const range = document.createElement('p');
+  range.textContent = document.getElementById('weekRangeLabel')?.textContent || '';
+  range.style.cssText = 'margin: 0 0 20px; font-size: 14px; color: #6b7280;';
+  container.appendChild(range);
+
+  const table = document.createElement('table');
+  table.style.cssText = 'width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed;';
+  table.setAttribute('border', '1');
+  table.setAttribute('cellpadding', '6');
+  table.setAttribute('cellspacing', '0');
+
+  const thead = document.createElement('thead');
+  const headerRow = document.createElement('tr');
+  const headers = ['Employee', 'Basic Salary', ...weekDates.map(d => {
+    const day = d.toLocaleDateString(undefined, { weekday: 'short' });
+    const date = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return `${day}\n${date}`;
+  }), 'Total Days', 'OT Hours', 'Gross Salary', 'Total Advances', 'Net Salary'];
+  
+  headers.forEach((text, idx) => {
+    const th = document.createElement('th');
+    th.textContent = text;
+    th.style.cssText = 'border: 1px solid #333; padding: 8px; text-align: center; font-weight: bold; background: #e3f2fd; color: #1976d2; font-size: 10px; white-space: pre-line;';
+    if (idx === 0) th.style.textAlign = 'left';
+    if (idx === 0) th.style.width = '120px';
+    else if (idx === 1) th.style.width = '100px';
+    else if (idx >= 2 && idx < 8) th.style.width = '90px';
+    else th.style.width = '80px';
+    headerRow.appendChild(th);
+  });
+  thead.appendChild(headerRow);
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  if (!employees.length) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = headers.length;
+    td.textContent = 'No records available';
+    td.style.cssText = 'border: 1px solid #333; padding: 12px; text-align: center; color: #666;';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+  } else {
+    employees.forEach(emp => {
+      const summary = calculateSummary(emp, weekDates);
+      const tr = document.createElement('tr');
+
+      const nameCell = document.createElement('td');
+      nameCell.textContent = emp.name;
+      nameCell.style.cssText = 'border: 1px solid #333; padding: 8px; text-align: left; font-weight: 600; font-size: 11px;';
+      tr.appendChild(nameCell);
+
+      const salaryCell = document.createElement('td');
+      salaryCell.textContent = formatCurrency(emp.salary);
+      salaryCell.style.cssText = 'border: 1px solid #333; padding: 8px; text-align: center; font-size: 11px;';
+      tr.appendChild(salaryCell);
+
+      weekDates.forEach(date => {
+        const iso = toISO(date);
+        const record = emp.records[iso];
+        const td = document.createElement('td');
+        if (record) {
+          const att = record.attendance || '-';
+          const ot = formatNumber(Number(record.mrngOt || 0) + Number(record.evngOt || 0));
+          const adv = formatCurrency(record.advance || 0);
+          td.innerHTML = `${att}<br>OT: ${ot}<br>Adv: ${adv}`;
+        } else {
+          td.textContent = '-';
+        }
+        td.style.cssText = 'border: 1px solid #333; padding: 6px; text-align: center; font-size: 10px; white-space: pre-line; line-height: 1.4;';
+        tr.appendChild(td);
+      });
+
+      const totals = [
+        formatNumber(summary.totalDays),
+        formatNumber(summary.totalOt),
+        formatCurrency(summary.gross),
+        formatCurrency(summary.totalAdvances),
+        formatCurrency(summary.netSalary)
+      ];
+      totals.forEach(value => {
+        const td = document.createElement('td');
+        td.textContent = value;
+        td.style.cssText = 'border: 1px solid #333; padding: 8px; text-align: center; font-weight: 600; font-size: 11px;';
+        tr.appendChild(td);
+      });
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  table.appendChild(tbody);
+  container.appendChild(table);
+  return container;
+}
+
+function addEmployee(event) {
+  event.preventDefault();
+  const nameInput = document.getElementById('newName');
+  const salaryInput = document.getElementById('newSalary');
+  const name = nameInput.value.trim();
+  const salary = parseFloat(salaryInput.value);
+
+  if (!name || isNaN(salary) || salary <= 0) {
+    alert('Please provide a valid name and salary.');
+    return;
+  }
+
+  const newEmployee = {
+    id: crypto.randomUUID ? crypto.randomUUID() : `emp-${Date.now()}`,
+    name,
+    salary,
+    records: {}
+  };
+
+  employees.push(newEmployee);
+  nameInput.value = '';
+  salaryInput.value = '';
+
+  updateEmployeeOptions(newEmployee.id);
+  renderTable();
+}
+
+function updateEmployeeOptions(preferEmployeeId) {
+  const select = document.getElementById('employeeSelect');
+  const hasEmployees = employees.length > 0;
+  const options = hasEmployees
+    ? ['<option value="">Select employee</option>', ...employees.map(emp => `<option value="${emp.id}">${emp.name}</option>`)].join('')
+    : '<option value="">No employees yet</option>';
+  select.innerHTML = options;
+  select.disabled = !hasEmployees;
+
+  const inputsToToggle = ['entryAttendance', 'entryMrngOt', 'entryEvngOt', 'entryAdvance', 'saveDailyBtn'];
+  inputsToToggle.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = !hasEmployees;
+  });
+
+  if (hasEmployees) {
+    const candidateId = preferEmployeeId || selectedEmployeeId;
+    const exists = employees.some(emp => emp.id === candidateId);
+    const resolvedId = exists ? candidateId : employees[0].id;
+    select.value = resolvedId;
+    selectedEmployeeId = resolvedId;
+  } else {
+    selectedEmployeeId = '';
+  }
+
+  renderEmployeeList();
+  populateDailyForm();
+}
+
+document.getElementById('employeeSelect').addEventListener('change', event => {
+  selectedEmployeeId = event.target.value;
+  populateDailyForm();
+});
+
+function resetDailyInputs() {
+  document.getElementById('entryAttendance').value = 'X';
+  document.getElementById('entryMrngOt').value = '';
+  document.getElementById('entryEvngOt').value = '';
+  document.getElementById('entryAdvance').value = '';
+}
+
+function populateDailyForm() {
+  const employeeId = document.getElementById('employeeSelect').value;
+  const dateValue = document.getElementById('entryDate').value;
+  if (!employeeId || !dateValue) {
+    resetDailyInputs();
+    return;
+  }
+
+  const employee = employees.find(emp => emp.id === employeeId);
+  if (!employee) {
+    resetDailyInputs();
+    return;
+  }
+
+  const record = employee.records[dateValue];
+  if (!record) {
+    resetDailyInputs();
+    return;
+  }
+
+  document.getElementById('entryAttendance').value = record.attendance || 'X';
+  document.getElementById('entryMrngOt').value = record.mrngOt || '';
+  document.getElementById('entryEvngOt').value = record.evngOt || '';
+  document.getElementById('entryAdvance').value = record.advance || '';
+}
+
+function saveDailyRecord(event) {
+  event.preventDefault();
+  if (!employees.length) return;
+
+  const employeeId = document.getElementById('employeeSelect').value;
+  const dateValue = document.getElementById('entryDate').value;
+  if (!employeeId || !dateValue) {
+    alert('Please choose an employee and date.');
+    return;
+  }
+
+  const employee = employees.find(emp => emp.id === employeeId);
+  if (!employee) {
+    alert('Unable to find the selected employee.');
+    return;
+  }
+
+  const attendance = document.getElementById('entryAttendance').value;
+  const mrngOt = parseFloat(document.getElementById('entryMrngOt').value) || 0;
+  const evngOt = parseFloat(document.getElementById('entryEvngOt').value) || 0;
+  const advance = parseFloat(document.getElementById('entryAdvance').value) || 0;
+
+  employee.records[dateValue] = {
+    attendance,
+    mrngOt,
+    evngOt,
+    advance
+  };
+
+  document.getElementById('entryMrngOt').value = '';
+  document.getElementById('entryEvngOt').value = '';
+  document.getElementById('entryAdvance').value = '';
+
+  currentDate = parseISO(dateValue);
+  currentWeekStart = getStartOfWeek(currentDate);
+  populateDailyForm();
+  renderTable();
+}
+
+function deleteEmployee(index) {
+  const employee = employees[index];
+  if (!employee) return;
+  if (!confirm(`Delete ${employee.name}'s records?`)) return;
+  employees.splice(index, 1);
+  updateEmployeeOptions();
+  renderTable();
+}
+
+function changeEntryDate(step) {
+  const dateInput = document.getElementById('entryDate');
+  const currentValue = dateInput.value ? parseISO(dateInput.value) : new Date();
+  currentValue.setDate(currentValue.getDate() + step);
+  while (currentValue.getDay() === 0) {
+    currentValue.setDate(currentValue.getDate() + step);
+  }
+  const iso = toISO(currentValue);
+  dateInput.value = iso;
+  onDateChange();
+}
+
+function setToday() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (today.getDay() === 0) {
+    today.setDate(today.getDate() + 1);
+  }
+  document.getElementById('entryDate').value = toISO(today);
+  onDateChange();
+}
+
+function onDateChange() {
+  const dateInput = document.getElementById('entryDate');
+  if (!dateInput.value) return;
+  currentDate = parseISO(dateInput.value);
+  currentWeekStart = getStartOfWeek(currentDate);
+  populateDailyForm();
+  renderTable();
+}
+
+document.getElementById('entryDate').addEventListener('change', onDateChange);
+
+function downloadWeekPdf() {
+  const tableCard = document.querySelector('.table-card');
+  if (!tableCard) return;
+  const rangeLabel = document.getElementById('weekRangeLabel');
+  const rawLabel = rangeLabel ? rangeLabel.textContent.trim() : 'Week';
+  const fileSafeLabel = rawLabel.replace(/[^\w]+/g, '_') || 'Week';
+
+  if (typeof html2pdf === 'undefined') {
+    window.print();
+    return;
+  }
+  
+  const weekDates = getWeekDates(currentWeekStart);
+  const exportNode = buildExportTable(weekDates);
+  
+  // Make it visible but off-screen for proper rendering
+  exportNode.style.position = 'absolute';
+  exportNode.style.left = '0';
+  exportNode.style.top = '0';
+  exportNode.style.zIndex = '-1';
+  exportNode.style.visibility = 'visible';
+  exportNode.style.opacity = '1';
+  
+  document.body.appendChild(exportNode);
+  
+  // Force a reflow to ensure rendering
+  void exportNode.offsetHeight;
+
+  const options = {
+    margin: [0.3, 0.3],
+    filename: `attendance_${fileSafeLabel}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { 
+      scale: 2, 
+      useCORS: true,
+      logging: false,
+      letterRendering: true,
+      width: exportNode.offsetWidth || 1200,
+      height: exportNode.offsetHeight || 800
+    },
+    jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' },
+    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+  };
+
+  html2pdf().set(options).from(exportNode).save().then(() => {
+    if (exportNode.parentNode) {
+      document.body.removeChild(exportNode);
+    }
+  }).catch(err => {
+    console.error('PDF generation error:', err);
+    if (exportNode.parentNode) {
+      document.body.removeChild(exportNode);
+    }
+    alert('Failed to generate PDF. Please try again or use Print instead.');
+  });
+}
+
+// Initialise
+function initialiseDashboard() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (today.getDay() === 0) {
+    today.setDate(today.getDate() + 1);
+  }
+  document.getElementById('entryDate').value = toISO(today);
+  document.getElementById('entryAttendance').value = 'X';
+  updateEmployeeOptions();
+  renderEmployeeList();
+  onDateChange();
+  setActiveTab('attendance');
+}
+
+initialiseDashboard();
+</script>
+</body>
+</html>
