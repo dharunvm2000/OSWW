@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker | OSWW</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --navy: #001f3f;
+            --navy-light: #2c4e6e;
+            --highlight: #0066cc;
+            --white: #ffffff;
+            --gray-light: #f5f7fa;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--gray-light);
+            color: var(--navy);
+            line-height: 1.6;
+        }
+
+        .header {
+            background-color: var(--navy);
+            color: var(--white);
+            padding: 15px 0;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            height: 35px;
+            margin-right: 15px;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+        }
+
+        .header-title h1 {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: var(--white);
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .nav-tab:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .nav-tab.active {
+            background: var(--white);
+            color: var(--navy);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px 40px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .card-title {
+            color: var(--navy);
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--navy);
+            font-size: 0.9rem;
+        }
+
+        input, select, textarea {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--highlight);
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--highlight);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: #0052a3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: var(--white);
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: var(--white);
+        }
+
+        .btn-secondary {
+            background: var(--navy-light);
+            color: var(--white);
+        }
+
+        .filters {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .filters .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: var(--gray-light);
+            font-weight: 600;
+            color: var(--navy);
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background: var(--gray-light);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--highlight) 0%, var(--navy) 100%);
+            color: var(--white);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .stat-card h3 {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .employee-card {
+            background: var(--white);
+            border-left: 4px solid var(--highlight);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+
+        .employee-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .employee-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .employee-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--navy-light);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--navy-light);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid var(--success);
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid var(--danger);
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .nav-tabs {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filters {
+                flex-direction: column;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="header-title">
+                <img src="logo.png" alt="OSWW Logo" class="logo">
+                <h1>Expense Tracker</h1>
+            </div>
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="switchTab('expenses')">
+                    <i class="fas fa-receipt"></i> Expenses
+                </button>
+                <button class="nav-tab" onclick="switchTab('advances')">
+                    <i class="fas fa-hand-holding-usd"></i> Advances
+                </button>
+                <button class="nav-tab" onclick="switchTab('dashboard')">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Expenses Tab -->
+        <div id="expenses-tab" class="tab-content active">
+            <div class="card">
+                <h2 class="card-title">
+                    <i class="fas fa-plus-circle"></i> Add New Expense
+                </h2>
+                <form id="expense-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="expense-date">Date *</label>
+                            <input type="date" id="expense-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="expense-category">Category *</label>
+                            <select id="expense-category" required>
+                                <option value="">Select Category</option>
+                                <option value="Fuel">Fuel</option>
+                                <option value="Material">Material</option>
+                                <option value="Food">Food</option>
+                                <option value="Misc">Misc</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="expense-amount">Amount (₹) *</label>
+                            <input type="number" id="expense-amount" step="0.01" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="expense-paid-by">Paid By</label>
+                            <select id="expense-paid-by">
+                                <option value="">Owner</option>
+                            </select>
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="expense-description">Description (Optional)</label>
+                            <textarea id="expense-description" placeholder="Add any notes about this expense..."></textarea>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Add Expense
+                    </button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">
+                    <i class="fas fa-filter"></i> Filter Expenses
+                </h2>
+                <div class="filters">
+                    <div class="form-group">
+                        <label for="filter-start-date">Start Date</label>
+                        <input type="date" id="filter-start-date">
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-end-date">End Date</label>
+                        <input type="date" id="filter-end-date">
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-category">Category</label>
+                        <select id="filter-category">
+                            <option value="">All Categories</option>
+                            <option value="Fuel">Fuel</option>
+                            <option value="Material">Material</option>
+                            <option value="Food">Food</option>
+                            <option value="Misc">Misc</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
+                        <button class="btn btn-secondary" onclick="applyFilters()">
+                            <i class="fas fa-search"></i> Filter
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearFilters()" style="margin-left: 10px;">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">
+                    <i class="fas fa-list"></i> Expense List
+                </h2>
+                <div id="expenses-list" class="table-container">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> Loading expenses...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advances Tab -->
+        <div id="advances-tab" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">
+                    <i class="fas fa-plus-circle"></i> Add Employee Advance
+                </h2>
+                <form id="advance-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="advance-employee">Employee *</label>
+                            <select id="advance-employee" required>
+                                <option value="">Select Employee</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="advance-date">Date *</label>
+                            <input type="date" id="advance-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="advance-amount">Amount (₹) *</label>
+                            <input type="number" id="advance-amount" step="0.01" min="0" required>
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="advance-note">Note (Optional)</label>
+                            <textarea id="advance-note" placeholder="Add any notes about this advance..."></textarea>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Add Advance
+                    </button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">
+                    <i class="fas fa-users"></i> Employee Balances
+                </h2>
+                <div id="employee-balances">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> Loading employee balances...
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">
+                    <i class="fas fa-history"></i> Advance History
+                </h2>
+                <div id="advances-list" class="table-container">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> Loading advances...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard-tab" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">
+                    <i class="fas fa-calendar-alt"></i> Monthly Summary
+                </h2>
+                <div class="form-grid" style="margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label for="dashboard-year">Year</label>
+                        <input type="number" id="dashboard-year" min="2020" max="2100">
+                    </div>
+                    <div class="form-group">
+                        <label for="dashboard-month">Month</label>
+                        <select id="dashboard-month">
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
+                        <button class="btn btn-primary" onclick="loadDashboard()">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                <div id="dashboard-stats" class="stats-grid"></div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">
+                    <i class="fas fa-users"></i> Employee Advances Summary
+                </h2>
+                <div id="advances-summary">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> Loading summary...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin.includes('localhost') 
+            ? 'http://localhost:3000/api' 
+            : '/api';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            setDefaultDates();
+            loadEmployees();
+            loadExpenses();
+            loadEmployeeBalances();
+            loadAdvances();
+            loadDashboard();
+            setupEventListeners();
+        });
+
+        function setDefaultDates() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('expense-date').value = today;
+            document.getElementById('advance-date').value = today;
+            
+            const now = new Date();
+            document.getElementById('dashboard-year').value = now.getFullYear();
+            document.getElementById('dashboard-month').value = now.getMonth() + 1;
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'expenses') loadExpenses();
+            if (tabName === 'advances') {
+                loadEmployeeBalances();
+                loadAdvances();
+            }
+            if (tabName === 'dashboard') loadDashboard();
+        }
+
+        function setupEventListeners() {
+            document.getElementById('expense-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await addExpense();
+            });
+
+            document.getElementById('advance-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await addAdvance();
+            });
+        }
+
+        async function loadEmployees() {
+            try {
+                const response = await fetch(`${API_BASE}/employees`);
+                const employees = await response.json();
+                
+                const expenseSelect = document.getElementById('expense-paid-by');
+                const advanceSelect = document.getElementById('advance-employee');
+                
+                employees.forEach(emp => {
+                    const option1 = document.createElement('option');
+                    option1.value = emp.id;
+                    option1.textContent = emp.name;
+                    expenseSelect.appendChild(option1);
+
+                    const option2 = document.createElement('option');
+                    option2.value = emp.id;
+                    option2.textContent = emp.name;
+                    advanceSelect.appendChild(option2);
+                });
+            } catch (error) {
+                console.error('Error loading employees:', error);
+            }
+        }
+
+        async function addExpense() {
+            try {
+                const expenseData = {
+                    expenseDate: document.getElementById('expense-date').value,
+                    category: document.getElementById('expense-category').value,
+                    amount: document.getElementById('expense-amount').value,
+                    paidByEmployeeId: document.getElementById('expense-paid-by').value || null,
+                    description: document.getElementById('expense-description').value || null
+                };
+
+                const response = await fetch(`${API_BASE}/expenses`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(expenseData)
+                });
+
+                if (response.ok) {
+                    document.getElementById('expense-form').reset();
+                    setDefaultDates();
+                    loadExpenses();
+                    showAlert('Expense added successfully!', 'success');
+                } else {
+                    throw new Error('Failed to add expense');
+                }
+            } catch (error) {
+                showAlert('Error adding expense: ' + error.message, 'error');
+            }
+        }
+
+        async function loadExpenses() {
+            try {
+                const startDate = document.getElementById('filter-start-date').value;
+                const endDate = document.getElementById('filter-end-date').value;
+                const category = document.getElementById('filter-category').value;
+
+                let url = `${API_BASE}/expenses?`;
+                if (startDate) url += `startDate=${startDate}&`;
+                if (endDate) url += `endDate=${endDate}&`;
+                if (category) url += `category=${category}&`;
+
+                const response = await fetch(url);
+                const expenses = await response.json();
+
+                const listDiv = document.getElementById('expenses-list');
+                
+                if (expenses.length === 0) {
+                    listDiv.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-receipt"></i>
+                            <p>No expenses found</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Category</th>
+                                <th>Amount</th>
+                                <th>Paid By</th>
+                                <th>Description</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                expenses.forEach(exp => {
+                    const date = new Date(exp.expenseDate).toLocaleDateString();
+                    const paidBy = exp.paidByEmployee ? exp.paidByEmployee.name : 'Owner';
+                    html += `
+                        <tr>
+                            <td>${date}</td>
+                            <td><span class="badge badge-info">${exp.category}</span></td>
+                            <td>₹${exp.amount.toFixed(2)}</td>
+                            <td>${paidBy}</td>
+                            <td>${exp.description || '-'}</td>
+                            <td>
+                                <button class="btn btn-danger" onclick="deleteExpense(${exp.id})" style="padding: 6px 12px; font-size: 0.85rem;">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += `</tbody></table>`;
+                listDiv.innerHTML = html;
+            } catch (error) {
+                document.getElementById('expenses-list').innerHTML = `
+                    <div class="alert alert-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Error loading expenses: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function deleteExpense(id) {
+            if (!confirm('Are you sure you want to delete this expense?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/expenses/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    loadExpenses();
+                    showAlert('Expense deleted successfully!', 'success');
+                } else {
+                    throw new Error('Failed to delete expense');
+                }
+            } catch (error) {
+                showAlert('Error deleting expense: ' + error.message, 'error');
+            }
+        }
+
+        async function addAdvance() {
+            try {
+                const advanceData = {
+                    employeeId: document.getElementById('advance-employee').value,
+                    amount: document.getElementById('advance-amount').value,
+                    date: document.getElementById('advance-date').value,
+                    note: document.getElementById('advance-note').value || null
+                };
+
+                const response = await fetch(`${API_BASE}/advances`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(advanceData)
+                });
+
+                if (response.ok) {
+                    document.getElementById('advance-form').reset();
+                    setDefaultDates();
+                    loadEmployeeBalances();
+                    loadAdvances();
+                    showAlert('Advance added successfully!', 'success');
+                } else {
+                    throw new Error('Failed to add advance');
+                }
+            } catch (error) {
+                showAlert('Error adding advance: ' + error.message, 'error');
+            }
+        }
+
+        async function loadEmployeeBalances() {
+            try {
+                const response = await fetch(`${API_BASE}/employees/balances`);
+                const employees = await response.json();
+
+                const balancesDiv = document.getElementById('employee-balances');
+                
+                if (employees.length === 0) {
+                    balancesDiv.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-users"></i>
+                            <p>No employees found</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                employees.forEach(emp => {
+                    const balanceClass = emp.balance >= 0 ? 'badge-success' : 'badge-danger';
+                    html += `
+                        <div class="employee-card">
+                            <div class="employee-header">
+                                <div class="employee-name">${emp.name}</div>
+                                <span class="badge ${balanceClass}">₹${emp.balance.toFixed(2)}</span>
+                            </div>
+                            <div class="employee-details">
+                                <div class="detail-item">
+                                    <span>Base Salary:</span>
+                                    <strong>₹${emp.baseSalary.toFixed(2)}</strong>
+                                </div>
+                                <div class="detail-item">
+                                    <span>Total Advances:</span>
+                                    <strong>₹${emp.totalAdvances.toFixed(2)}</strong>
+                                </div>
+                                <div class="detail-item">
+                                    <span>Remaining Salary:</span>
+                                    <strong>₹${emp.remainingSalary.toFixed(2)}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                balancesDiv.innerHTML = html;
+            } catch (error) {
+                document.getElementById('employee-balances').innerHTML = `
+                    <div class="alert alert-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Error loading employee balances: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function loadAdvances() {
+            try {
+                const response = await fetch(`${API_BASE}/advances`);
+                const advances = await response.json();
+
+                const listDiv = document.getElementById('advances-list');
+                
+                if (advances.length === 0) {
+                    listDiv.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-hand-holding-usd"></i>
+                            <p>No advances found</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Employee</th>
+                                <th>Amount</th>
+                                <th>Note</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                advances.forEach(adv => {
+                    const date = new Date(adv.date).toLocaleDateString();
+                    html += `
+                        <tr>
+                            <td>${date}</td>
+                            <td>${adv.employee.name}</td>
+                            <td>₹${adv.amount.toFixed(2)}</td>
+                            <td>${adv.note || '-'}</td>
+                            <td>
+                                <button class="btn btn-danger" onclick="deleteAdvance(${adv.id})" style="padding: 6px 12px; font-size: 0.85rem;">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += `</tbody></table>`;
+                listDiv.innerHTML = html;
+            } catch (error) {
+                document.getElementById('advances-list').innerHTML = `
+                    <div class="alert alert-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Error loading advances: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function deleteAdvance(id) {
+            if (!confirm('Are you sure you want to delete this advance?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/advances/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    loadEmployeeBalances();
+                    loadAdvances();
+                    showAlert('Advance deleted successfully!', 'success');
+                } else {
+                    throw new Error('Failed to delete advance');
+                }
+            } catch (error) {
+                showAlert('Error deleting advance: ' + error.message, 'error');
+            }
+        }
+
+        async function loadDashboard() {
+            const year = document.getElementById('dashboard-year').value;
+            const month = document.getElementById('dashboard-month').value;
+
+            try {
+                const [monthlyResponse, advancesResponse] = await Promise.all([
+                    fetch(`${API_BASE}/dashboard/monthly?year=${year}&month=${month}`),
+                    fetch(`${API_BASE}/dashboard/advances`)
+                ]);
+
+                const monthly = await monthlyResponse.json();
+                const advances = await advancesResponse.json();
+
+                // Display monthly stats
+                const statsDiv = document.getElementById('dashboard-stats');
+                const categoryBreakdown = Object.entries(monthly.categoryBreakdown || {})
+                    .map(([cat, amt]) => `<div><strong>${cat}:</strong> ₹${amt.toFixed(2)}</div>`)
+                    .join('');
+
+                statsDiv.innerHTML = `
+                    <div class="stat-card">
+                        <h3>Total Spending</h3>
+                        <div class="value">₹${monthly.totalSpending.toFixed(2)}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Expense Count</h3>
+                        <div class="value">${monthly.expenseCount}</div>
+                    </div>
+                `;
+
+                // Display category breakdown
+                if (categoryBreakdown) {
+                    statsDiv.innerHTML += `
+                        <div class="card" style="grid-column: 1 / -1; margin-top: 0;">
+                            <h3 style="margin-bottom: 15px;">Category Breakdown</h3>
+                            ${categoryBreakdown}
+                        </div>
+                    `;
+                }
+
+                // Display advances summary
+                const summaryDiv = document.getElementById('advances-summary');
+                if (advances.length === 0) {
+                    summaryDiv.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-users"></i>
+                            <p>No employee advances</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let summaryHtml = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Base Salary</th>
+                                <th>Total Advances</th>
+                                <th>Remaining Salary</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                advances.forEach(adv => {
+                    const balanceClass = adv.remainingSalary >= 0 ? 'badge-success' : 'badge-danger';
+                    summaryHtml += `
+                        <tr>
+                            <td>${adv.employeeName}</td>
+                            <td>₹${adv.baseSalary.toFixed(2)}</td>
+                            <td>₹${adv.totalAdvances.toFixed(2)}</td>
+                            <td><span class="badge ${balanceClass}">₹${adv.remainingSalary.toFixed(2)}</span></td>
+                        </tr>
+                    `;
+                });
+
+                summaryHtml += `</tbody></table>`;
+                summaryDiv.innerHTML = summaryHtml;
+            } catch (error) {
+                document.getElementById('dashboard-stats').innerHTML = `
+                    <div class="alert alert-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Error loading dashboard: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function applyFilters() {
+            loadExpenses();
+        }
+
+        function clearFilters() {
+            document.getElementById('filter-start-date').value = '';
+            document.getElementById('filter-end-date').value = '';
+            document.getElementById('filter-category').value = '';
+            loadExpenses();
+        }
+
+        function showAlert(message, type) {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                ${message}
+            `;
+            
+            const container = document.querySelector('.container');
+            container.insertBefore(alert, container.firstChild);
+            
+            setTimeout(() => alert.remove(), 3000);
+        }
+    </script>
+</body>
+</html>
+
