@@ -5,6 +5,7 @@
   <title>Weekly Salary Calculator & Attendance Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f9fafb">
+  <meta name="color-scheme" content="light">
   <style>
     :root {
       color-scheme: light;
@@ -16,7 +17,8 @@
       --bg: #f9fafb;
     }
     * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 24px; }
+    html { background: #f9fafb !important; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f9fafb !important; color: var(--text); margin: 0; padding: 24px; }
     h2 { margin: 0 0 24px; font-size: 28px; font-weight: 600; }
     .layout { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
     .nav-tabs { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
@@ -75,7 +77,8 @@
     }
     @media (prefers-color-scheme: dark) {
       :root { --border: #334155; --bg: #0f172a; --text: #e2e8f0; --muted: #94a3b8; --accent-soft: rgba(37, 99, 235, 0.15); }
-      body { background: var(--bg); color: var(--text); }
+      html { background: #f9fafb !important; }
+      body { background: #f9fafb !important; color: var(--text); }
       .card { background: #0b1a2d; border-color: var(--border); box-shadow: 0 18px 32px rgba(2, 6, 23, 0.65); }
       input, select { background: #0f203a; color: var(--text); border-color: #1e293b; }
       thead th { background: rgba(37, 99, 235, 0.18); color: #bfdbfe; }
@@ -739,4 +742,3 @@ initialiseDashboard();
 </script>
 </body>
 </html>
-
