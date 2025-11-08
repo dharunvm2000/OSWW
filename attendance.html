@@ -4,9 +4,8 @@
   <meta charset="UTF-8">
   <title>Weekly Salary Calculator & Attendance Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f9fafb">
-  <meta name="color-scheme" content="light">
   <style>
+    /* Your existing CSS remains the same */
     :root {
       color-scheme: light;
       --accent: #2563eb;
@@ -17,8 +16,7 @@
       --bg: #f9fafb;
     }
     * { box-sizing: border-box; }
-    html { background: #f9fafb !important; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f9fafb !important; color: var(--text); margin: 0; padding: 24px; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 24px; }
     h2 { margin: 0 0 24px; font-size: 28px; font-weight: 600; }
     .layout { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
     .nav-tabs { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
@@ -39,6 +37,8 @@
     .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 24px rgba(37, 99, 235, 0.26); }
     .btn-secondary { background: var(--accent-soft); color: var(--accent); }
     .btn-secondary:hover { transform: translateY(-1px); }
+    .btn-danger { background: #fee2e2; color: #b91c1c; }
+    .btn-danger:hover { background: #fecaca; }
     .btn-icon { width: 40px; height: 40px; border-radius: 50%; padding: 0; font-size: 18px; line-height: 1; }
     .date-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .date-controls input[type="date"] { min-width: 170px; }
@@ -65,6 +65,27 @@
     .employee-list table { width: 100%; border-collapse: collapse; }
     .employee-list th, .employee-list td { padding: 12px 10px; border-bottom: 1px solid rgba(226, 232, 240, 0.7); text-align: left; font-size: 14px; }
     .employee-list th { text-transform: uppercase; letter-spacing: 0.05em; font-size: 12px; color: var(--muted); }
+    
+    /* Print styles */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #printable-pdf, #printable-pdf * {
+        visibility: visible;
+      }
+      #printable-pdf {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 20px;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+    
     @media (max-width: 720px) {
       body { padding: 20px 16px; }
       h2 { font-size: 24px; }
@@ -77,8 +98,7 @@
     }
     @media (prefers-color-scheme: dark) {
       :root { --border: #334155; --bg: #0f172a; --text: #e2e8f0; --muted: #94a3b8; --accent-soft: rgba(37, 99, 235, 0.15); }
-      html { background: #f9fafb !important; }
-      body { background: #f9fafb !important; color: var(--text); }
+      body { background: var(--bg); color: var(--text); }
       .card { background: #0b1a2d; border-color: var(--border); box-shadow: 0 18px 32px rgba(2, 6, 23, 0.65); }
       input, select { background: #0f203a; color: var(--text); border-color: #1e293b; }
       thead th { background: rgba(37, 99, 235, 0.18); color: #bfdbfe; }
@@ -146,12 +166,12 @@
           <h3>Week At A Glance</h3>
           <span id="weekRangeLabel" class="chip"></span>
         </div>
-        <button type="button" class="btn btn-secondary" data-pdf-hide="true" onclick="downloadWeekPdf()">Download PDF</button>
+        <button type="button" class="btn btn-secondary no-print" onclick="downloadWeekPdf()">Download PDF</button>
       </div>
       <table id="attendanceTable">
         <thead id="attendanceHead"></thead>
-    <tbody id="attendanceBody"></tbody>
-  </table>
+        <tbody id="attendanceBody"></tbody>
+      </table>
     </section>
 
     <section class="card" data-tab-panel="employees" hidden>
@@ -176,7 +196,9 @@
     </section>
   </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" referrerpolicy="no-referrer"></script>
+  <!-- Hidden printable content -->
+  <div id="printable-pdf" style="display: none;"></div>
+
 <script>
 // Data store
 const employees = [];
@@ -345,8 +367,8 @@ function renderTable() {
         <td>${formatCurrency(summary.totalAdvances)}</td>
         <td>${formatCurrency(summary.netSalary)}</td>
         <td>
-          <button class="btn btn-secondary" onclick="deleteEmployee(${idx})">Delete</button>
-      </td>
+          <button class="btn btn-danger no-print" onclick="clearWeekEntries(${idx})" title="Clear this week's entries">Clear Week</button>
+        </td>
       </tr>
     `;
   }).join('');
@@ -366,7 +388,7 @@ function renderEmployeeList() {
       <td>${formatCurrency(emp.salary)}</td>
       <td>${Object.keys(emp.records).length}</td>
       <td>
-        <button type="button" class="btn btn-secondary" onclick="deleteEmployee(${idx})">Delete</button>
+        <button type="button" class="btn btn-danger" onclick="deleteEmployee(${idx})">Delete Employee</button>
       </td>
     </tr>
   `).join('');
@@ -386,109 +408,139 @@ function renderEmployeeList() {
   `;
 }
 
-function buildExportTable(weekDates) {
-  const container = document.createElement('div');
-  container.style.cssText = 'font-family: Arial, sans-serif; padding: 20px; background: #ffffff; color: #000; width: 1200px; min-width: 1200px;';
+// NEW FUNCTION: Clear only the current week's entries for an employee
+function clearWeekEntries(employeeIndex) {
+  const employee = employees[employeeIndex];
+  if (!employee) return;
   
-  const title = document.createElement('h2');
-  title.textContent = 'Attendance Summary';
-  title.style.cssText = 'margin: 0 0 10px; font-size: 24px; font-weight: bold; color: #1f2937;';
-  container.appendChild(title);
-
-  const range = document.createElement('p');
-  range.textContent = document.getElementById('weekRangeLabel')?.textContent || '';
-  range.style.cssText = 'margin: 0 0 20px; font-size: 14px; color: #6b7280;';
-  container.appendChild(range);
-
-  const table = document.createElement('table');
-  table.style.cssText = 'width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed;';
-  table.setAttribute('border', '1');
-  table.setAttribute('cellpadding', '6');
-  table.setAttribute('cellspacing', '0');
-
-  const thead = document.createElement('thead');
-  const headerRow = document.createElement('tr');
-  const headers = ['Employee', 'Basic Salary', ...weekDates.map(d => {
-    const day = d.toLocaleDateString(undefined, { weekday: 'short' });
-    const date = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-    return `${day}\n${date}`;
-  }), 'Total Days', 'OT Hours', 'Gross Salary', 'Total Advances', 'Net Salary'];
+  const weekDates = getWeekDates(currentWeekStart);
+  const weekISOs = weekDates.map(date => toISO(date));
   
-  headers.forEach((text, idx) => {
-    const th = document.createElement('th');
-    th.textContent = text;
-    th.style.cssText = 'border: 1px solid #333; padding: 8px; text-align: center; font-weight: bold; background: #e3f2fd; color: #1976d2; font-size: 10px; white-space: pre-line;';
-    if (idx === 0) th.style.textAlign = 'left';
-    if (idx === 0) th.style.width = '120px';
-    else if (idx === 1) th.style.width = '100px';
-    else if (idx >= 2 && idx < 8) th.style.width = '90px';
-    else th.style.width = '80px';
-    headerRow.appendChild(th);
+  let deletedCount = 0;
+  weekISOs.forEach(iso => {
+    if (employee.records[iso]) {
+      delete employee.records[iso];
+      deletedCount++;
+    }
   });
-  thead.appendChild(headerRow);
-  table.appendChild(thead);
+  
+  if (deletedCount > 0) {
+    alert(`Cleared ${deletedCount} entries for ${employee.name} for this week.`);
+    renderTable();
+    populateDailyForm();
+  } else {
+    alert(`No entries found for ${employee.name} for this week.`);
+  }
+}
 
-  const tbody = document.createElement('tbody');
-  if (!employees.length) {
-    const tr = document.createElement('tr');
-    const td = document.createElement('td');
-    td.colSpan = headers.length;
-    td.textContent = 'No records available';
-    td.style.cssText = 'border: 1px solid #333; padding: 12px; text-align: center; color: #666;';
-    tr.appendChild(td);
-    tbody.appendChild(tr);
+// EXISTING FUNCTION: Delete entire employee (only in Employees tab)
+function deleteEmployee(index) {
+  const employee = employees[index];
+  if (!employee) return;
+  if (!confirm(`Permanently delete ${employee.name} and all their records? This cannot be undone.`)) return;
+  employees.splice(index, 1);
+  updateEmployeeOptions();
+  renderTable();
+  renderEmployeeList();
+}
+
+function createPrintableContent() {
+  const weekDates = getWeekDates(currentWeekStart);
+  const printableDiv = document.getElementById('printable-pdf');
+  
+  let html = `
+    <div style="font-family: Arial, sans-serif; padding: 20px;">
+      <h1 style="text-align: center; color: #2563eb; margin-bottom: 10px;">Weekly Attendance Summary</h1>
+      <p style="text-align: center; color: #666; margin-bottom: 20px; font-size: 16px;">
+        ${document.getElementById('weekRangeLabel')?.textContent || ''}
+      </p>
+      <table style="width: 100%; border-collapse: collapse; font-size: 12px; border: 1px solid #333;">
+        <thead>
+          <tr>
+            <th style="border: 1px solid #333; padding: 10px; background: #e3f2fd; text-align: center;">Employee</th>
+            <th style="border: 1px solid #333; padding: 10px; background: #e3f2fd; text-align: center;">Basic Salary</th>
+  `;
+  
+  // Add day headers
+  weekDates.forEach(date => {
+    const day = date.toLocaleDateString(undefined, { weekday: 'short' });
+    const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    html += `<th style="border: 1px solid #333; padding: 8px; background: #e3f2fd; text-align: center; white-space: pre-line;">${day}\n${dateStr}</th>`;
+  });
+  
+  html += `
+            <th style="border: 1px solid #333; padding: 10px; background: #e3f2fd; text-align: center;">Total Days</th>
+            <th style="border: 1px solid #333; padding: 10px; background: #e3f2fd; text-align: center;">OT Hours</th>
+            <th style="border: 1px solid #333; padding: 10px; background: #e3f2fd; text-align: center;">Gross Salary</th>
+            <th style="border: 1px solid #333; padding: 10px; background: #e3f2fd; text-align: center;">Total Advances</th>
+            <th style="border: 1px solid #333; padding: 10px; background: #e3f2fd; text-align: center;">Net Salary</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+  
+  if (employees.length === 0) {
+    html += `
+      <tr>
+        <td colspan="${weekDates.length + 7}" style="border: 1px solid #333; padding: 20px; text-align: center; color: #666;">
+          No employee data available
+        </td>
+      </tr>
+    `;
   } else {
     employees.forEach(emp => {
       const summary = calculateSummary(emp, weekDates);
-      const tr = document.createElement('tr');
-
-      const nameCell = document.createElement('td');
-      nameCell.textContent = emp.name;
-      nameCell.style.cssText = 'border: 1px solid #333; padding: 8px; text-align: left; font-weight: 600; font-size: 11px;';
-      tr.appendChild(nameCell);
-
-      const salaryCell = document.createElement('td');
-      salaryCell.textContent = formatCurrency(emp.salary);
-      salaryCell.style.cssText = 'border: 1px solid #333; padding: 8px; text-align: center; font-size: 11px;';
-      tr.appendChild(salaryCell);
-
+      html += `
+        <tr>
+          <td style="border: 1px solid #333; padding: 8px; font-weight: bold;">${emp.name}</td>
+          <td style="border: 1px solid #333; padding: 8px; text-align: center;">${formatCurrency(emp.salary)}</td>
+      `;
+      
+      // Daily records
       weekDates.forEach(date => {
         const iso = toISO(date);
         const record = emp.records[iso];
-        const td = document.createElement('td');
         if (record) {
-          const att = record.attendance || '-';
-          const ot = formatNumber(Number(record.mrngOt || 0) + Number(record.evngOt || 0));
-          const adv = formatCurrency(record.advance || 0);
-          td.innerHTML = `${att}<br>OT: ${ot}<br>Adv: ${adv}`;
+          const attendance = record.attendance || '-';
+          const morningOT = record.mrngOt || 0;
+          const eveningOT = record.evngOt || 0;
+          const advance = record.advance || 0;
+          html += `
+            <td style="border: 1px solid #333; padding: 6px; text-align: center; font-size: 11px;">
+              <div><strong>${attendance}</strong></div>
+              <div>M-OT: ${morningOT}</div>
+              <div>E-OT: ${eveningOT}</div>
+              <div>Adv: ${formatCurrency(advance)}</div>
+            </td>
+          `;
         } else {
-          td.textContent = '-';
+          html += `<td style="border: 1px solid #333; padding: 8px; text-align: center;">-</td>`;
         }
-        td.style.cssText = 'border: 1px solid #333; padding: 6px; text-align: center; font-size: 10px; white-space: pre-line; line-height: 1.4;';
-        tr.appendChild(td);
       });
-
-      const totals = [
-        formatNumber(summary.totalDays),
-        formatNumber(summary.totalOt),
-        formatCurrency(summary.gross),
-        formatCurrency(summary.totalAdvances),
-        formatCurrency(summary.netSalary)
-      ];
-      totals.forEach(value => {
-        const td = document.createElement('td');
-        td.textContent = value;
-        td.style.cssText = 'border: 1px solid #333; padding: 8px; text-align: center; font-weight: 600; font-size: 11px;';
-        tr.appendChild(td);
-      });
-
-      tbody.appendChild(tr);
+      
+      // Summary columns
+      html += `
+          <td style="border: 1px solid #333; padding: 8px; text-align: center; font-weight: bold;">${formatNumber(summary.totalDays)}</td>
+          <td style="border: 1px solid #333; padding: 8px; text-align: center; font-weight: bold;">${formatNumber(summary.totalOt)}</td>
+          <td style="border: 1px solid #333; padding: 8px; text-align: center; font-weight: bold;">${formatCurrency(summary.gross)}</td>
+          <td style="border: 1px solid #333; padding: 8px; text-align: center; font-weight: bold;">${formatCurrency(summary.totalAdvances)}</td>
+          <td style="border: 1px solid #333; padding: 8px; text-align: center; font-weight: bold;">${formatCurrency(summary.netSalary)}</td>
+        </tr>
+      `;
     });
   }
-
-  table.appendChild(tbody);
-  container.appendChild(table);
-  return container;
+  
+  html += `
+        </tbody>
+      </table>
+      <div style="margin-top: 20px; font-size: 11px; color: #666; text-align: center;">
+        Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}
+      </div>
+    </div>
+  `;
+  
+  printableDiv.innerHTML = html;
+  return printableDiv;
 }
 
 function addEmployee(event) {
@@ -624,15 +676,6 @@ function saveDailyRecord(event) {
   renderTable();
 }
 
-function deleteEmployee(index) {
-  const employee = employees[index];
-  if (!employee) return;
-  if (!confirm(`Delete ${employee.name}'s records?`)) return;
-  employees.splice(index, 1);
-  updateEmployeeOptions();
-  renderTable();
-}
-
 function changeEntryDate(step) {
   const dateInput = document.getElementById('entryDate');
   const currentValue = dateInput.value ? parseISO(dateInput.value) : new Date();
@@ -667,60 +710,20 @@ function onDateChange() {
 document.getElementById('entryDate').addEventListener('change', onDateChange);
 
 function downloadWeekPdf() {
-  const tableCard = document.querySelector('.table-card');
-  if (!tableCard) return;
-  const rangeLabel = document.getElementById('weekRangeLabel');
-  const rawLabel = rangeLabel ? rangeLabel.textContent.trim() : 'Week';
-  const fileSafeLabel = rawLabel.replace(/[^\w]+/g, '_') || 'Week';
-
-  if (typeof html2pdf === 'undefined') {
-    window.print();
-    return;
-  }
+  // Create printable content
+  createPrintableContent();
   
-  const weekDates = getWeekDates(currentWeekStart);
-  const exportNode = buildExportTable(weekDates);
+  // Show the printable content and hide everything else for printing
+  const printableDiv = document.getElementById('printable-pdf');
+  printableDiv.style.display = 'block';
   
-  // Make it visible but off-screen for proper rendering
-  exportNode.style.position = 'absolute';
-  exportNode.style.left = '0';
-  exportNode.style.top = '0';
-  exportNode.style.zIndex = '-1';
-  exportNode.style.visibility = 'visible';
-  exportNode.style.opacity = '1';
+  // Use browser's print functionality
+  window.print();
   
-  document.body.appendChild(exportNode);
-  
-  // Force a reflow to ensure rendering
-  void exportNode.offsetHeight;
-
-  const options = {
-    margin: [0.3, 0.3],
-    filename: `attendance_${fileSafeLabel}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { 
-      scale: 2, 
-      useCORS: true,
-      logging: false,
-      letterRendering: true,
-      width: exportNode.offsetWidth || 1200,
-      height: exportNode.offsetHeight || 800
-    },
-    jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' },
-    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-  };
-
-  html2pdf().set(options).from(exportNode).save().then(() => {
-    if (exportNode.parentNode) {
-      document.body.removeChild(exportNode);
-    }
-  }).catch(err => {
-    console.error('PDF generation error:', err);
-    if (exportNode.parentNode) {
-      document.body.removeChild(exportNode);
-    }
-    alert('Failed to generate PDF. Please try again or use Print instead.');
-  });
+  // Hide the printable content again after printing
+  setTimeout(() => {
+    printableDiv.style.display = 'none';
+  }, 500);
 }
 
 // Initialise
