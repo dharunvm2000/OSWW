@@ -68,23 +68,62 @@
     
     /* Print styles */
     @media print {
-      body * {
-        visibility: hidden;
-      }
-      #printable-pdf, #printable-pdf * {
-        visibility: visible;
-      }
-      #printable-pdf {
-        position: absolute;
-        left: 5;
-        top: 0;
-        width: 100%;
-        padding: 10px;
-      }
-      .no-print {
-        display: none !important;
-      }
-    }
+  body * {
+    visibility: hidden;
+  }
+  #printable-pdf, #printable-pdf * {
+    visibility: visible;
+  }
+  #printable-pdf {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    padding: 5mm;
+    margin: 0;
+    background: white;
+  }
+  #printable-pdf table {
+    width: 100% !important;
+    max-width: 100% !important;
+    font-size: 10px !important;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  #printable-pdf th,
+  #printable-pdf td {
+    padding: 4px !important;
+    border: 1px solid #333 !important;
+    word-wrap: break-word;
+    line-height: 1.2;
+  }
+  #printable-pdf th {
+    font-size: 9px !important;
+    background: #e3f2fd !important;
+  }
+  #printable-pdf h1 {
+    font-size: 18px !important;
+    margin: 0 0 8px 0 !important;
+  }
+  #printable-pdf p {
+    font-size: 12px !important;
+    margin: 0 0 12px 0 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  
+  /* Ensure proper page breaks and margins */
+  @page {
+    margin: 5mm;
+    size: landscape;
+  }
+  
+  body {
+    margin: 0;
+    padding: 0;
+  }
+}
     
     @media (max-width: 720px) {
       body { padding: 20px 16px; }
@@ -449,31 +488,31 @@ function createPrintableContent() {
   const printableDiv = document.getElementById('printable-pdf');
   
   let html = `
-    <div style="font-family: Arial, sans-serif; padding: 20px;">
-      <h1 style="text-align: center; color: #2563eb; margin-bottom: 10px;">Weekly Attendance Summary</h1>
-      <p style="text-align: center; color: #666; margin-bottom: 20px; font-size: 16px;">
+    <div style="font-family: Arial, sans-serif; padding: 0; margin: 0;">
+      <h1 style="text-align: center; color: #2563eb; margin: 0 0 5px 0; font-size: 16px;">Weekly Attendance Summary</h1>
+      <p style="text-align: center; color: #666; margin: 0 0 10px 0; font-size: 12px;">
         ${document.getElementById('weekRangeLabel')?.textContent || ''}
       </p>
-      <table style="width: 100%; border-collapse: collapse; font-size: 12px; border: 1px solid #333;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 9px; border: 1px solid #333; table-layout: fixed;">
         <thead>
           <tr>
-            <th style="border: 1px solid #333; padding: 10px; background: #e3f2fd; text-align: center;">Employee</th>
-            <th style="border: 1px solid #333; padding: 10px; background: #e3f2fd; text-align: center;">Basic Salary</th>
+            <th style="border: 1px solid #333; padding: 4px; background: #e3f2fd; text-align: center; width: 100px;">Employee</th>
+            <th style="border: 1px solid #333; padding: 4px; background: #e3f2fd; text-align: center; width: 70px;">Basic Salary</th>
   `;
   
-  // Add day headers
+  // Add day headers with smaller widths
   weekDates.forEach(date => {
     const day = date.toLocaleDateString(undefined, { weekday: 'short' });
     const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-    html += `<th style="border: 1px solid #333; padding: 8px; background: #e3f2fd; text-align: center; white-space: pre-line;">${day}\n${dateStr}</th>`;
+    html += `<th style="border: 1px solid #333; padding: 4px; background: #e3f2fd; text-align: center; white-space: pre-line; width: 60px;">${day}\n${dateStr}</th>`;
   });
   
   html += `
-            <th style="border: 1px solid #333; padding: 10px; background: #e3f2fd; text-align: center;">Total Days</th>
-            <th style="border: 1px solid #333; padding: 10px; background: #e3f2fd; text-align: center;">OT Hours</th>
-            <th style="border: 1px solid #333; padding: 10px; background: #e3f2fd; text-align: center;">Gross Salary</th>
-            <th style="border: 1px solid #333; padding: 10px; background: #e3f2fd; text-align: center;">Total Advances</th>
-            <th style="border: 1px solid #333; padding: 10px; background: #e3f2fd; text-align: center;">Net Salary</th>
+            <th style="border: 1px solid #333; padding: 4px; background: #e3f2fd; text-align: center; width: 50px;">Total Days</th>
+            <th style="border: 1px solid #333; padding: 4px; background: #e3f2fd; text-align: center; width: 50px;">OT Hours</th>
+            <th style="border: 1px solid #333; padding: 4px; background: #e3f2fd; text-align: center; width: 70px;">Gross Salary</th>
+            <th style="border: 1px solid #333; padding: 4px; background: #e3f2fd; text-align: center; width: 70px;">Total Advances</th>
+            <th style="border: 1px solid #333; padding: 4px; background: #e3f2fd; text-align: center; width: 70px;">Net Salary</th>
           </tr>
         </thead>
         <tbody>
@@ -745,4 +784,5 @@ initialiseDashboard();
 </script>
 </body>
 </html>
+
 
